@@ -126,7 +126,11 @@ public:
     SocketServer & operator=(const SocketServer &) = delete;
 
 signals:
-    void getMessageFromClient(string msg, SOCKET sender_socket);
+    void getMessageFromClient(QString msg, int sender_socket);
+
+    void clientConnected(int client_socket);
+
+    void clientDisconnected(int client_socket);
 
 public slots:
 
@@ -134,25 +138,29 @@ public slots:
 
   void start(bool block_to_wait_enter_instruct = true);
 
-	bool sendMessage(string msg, SOCKET receiver_socket = -1);
+  bool sendMessage(string msg, int receiver_socket = -1);
 
-	bool broadcastMessage(string msg);
+  bool sendMessage(QString msg_q, int receiver_socket = -1);
 
-  int handleMessage(string msg, SOCKET sender_socket);
+  bool broadcastMessage(string msg);
+
+  int handleMessage(string msg, int sender_socket);
+
+  bool executeInstruct(QString instruct_str);
 
   int clientCount() {
     return client_manager.clientCount();
   }
 
-  bool addClient(SOCKET s, char* ip) {
+  bool addClient(int s, char* ip) {
     return client_manager.addClient(s, ip);
   }
 
-  bool deleteClient(SOCKET s) {
+  bool deleteClient(int s) {
     return client_manager.deleteClient(s);
   }
 
-  SOCKET getSocket(int index) {
+  int getSocket(int index) {
     return client_manager.getSocket(index);
   }
 
@@ -160,7 +168,7 @@ public slots:
     return client_manager.isValid(index);
   }
 
-  int socketIndex(SOCKET s) {
+  int socketIndex(int s) {
     return client_manager.socketIndex(s);
   }
 

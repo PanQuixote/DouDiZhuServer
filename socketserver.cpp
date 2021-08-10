@@ -160,7 +160,7 @@ void SocketServer::WaitForClient()
   //    }
 }
 
-bool SocketServer::sendMessage(string msg, SOCKET receiver_socket)
+bool SocketServer::sendMessage(string msg, int receiver_socket)
 {
   if (receiver_socket == -1) {
     return broadcastMessage(msg);
@@ -173,6 +173,13 @@ bool SocketServer::sendMessage(string msg, SOCKET receiver_socket)
     return false;
   }
   return true;
+}
+
+bool SocketServer::sendMessage(QString msg_q, int receiver_socket)
+{
+  string msg = msg_q.toStdString();
+
+  return sendMessage(msg, receiver_socket);
 }
 
 bool SocketServer::broadcastMessage(string msg)
@@ -195,7 +202,7 @@ bool SocketServer::broadcastMessage(string msg)
   return flag;
 }
 
-int SocketServer::handleMessage(string msg, SOCKET sender_socket)
+int SocketServer::handleMessage(string msg, int sender_socket)
 {
 //  cout << "Message received: " << msg << ", socket = " << sender_socket
 //    << ", index = " << socketIndex(sender_socket) << endl;
@@ -207,11 +214,22 @@ int SocketServer::handleMessage(string msg, SOCKET sender_socket)
 //    return 1;
 //  }
 
-//  return 0;
+  QString msg_q = QString::fromStdString(msg);
 
-  emit getMessageFromClient(msg, sender_socket);
+  emit getMessageFromClient(msg_q, sender_socket);
 
   return 0;
+}
+
+bool SocketServer::executeInstruct(QString instruct_str)
+{
+  if (instruct_str == "exit") {
+    cout << "server exit!" << endl;
+    system("pause");
+    exit(0);
+  }
+
+  return false;
 }
 
 
@@ -272,7 +290,9 @@ DWORD WINAPI waitForClientThread(LPVOID lpParameter) {
 
     PWSTR buf_ip_p = (PWSTR)buf_ip;
     ::InetNtop(addr_clt.sin_family, &addr_clt, buf_ip_p, IP_BUF_SIZE);
-    cout << "A new client connected...IP address: " << buf_ip << ", port number: " << ::ntohs(addr_clt.sin_port) << endl;
+    cout << "A new client connected...port number: " << ::ntohs(addr_clt.sin_port) << endl;
+
+    emit pArg->m_pObj->clientConnected(sock_clt);
 
     HANDLE h_thread;
     ThreadArg* pArg_for_client = new ThreadArg(pArg->m_pObj, sock_clt);
@@ -311,7 +331,10 @@ DWORD WINAPI createClientThread(LPVOID lpParameter)
     if (checksock(sock_clt) == false) {
       pArg->m_pObj->deleteClient(sock_clt);
       cout << "user " << socket_index
-        << " connection closed..." << endl;
+        << " connection closed...socket = " << sock_clt << endl;
+
+      emit pArg->m_pObj->clientDisconnected(sock_clt);
+
       break;
     }
 
@@ -324,6 +347,9 @@ DWORD WINAPI createClientThread(LPVOID lpParameter)
         cout << "Client " << socket_index
           << "requests to close the connection..." << endl;
         pArg->m_pObj->deleteClient(sock_clt);
+
+        emit pArg->m_pObj->clientDisconnected(sock_clt);
+
         break;
       }
 
@@ -331,21 +357,14 @@ DWORD WINAPI createClientThread(LPVOID lpParameter)
 
       pArg->m_pObj->handleMessage(msg, sock_clt);
 
-//      int snd_result = 0;
-//      snd_result = ::send(sock_clt, buf_msg, MSG_BUF_SIZE, 0);
-//      if (snd_result == SOCKET_ERROR)
-//      {
-//          cerr << "Failed to send message to client!Error code: " << ::GetLastError() << "\n";
-//          ::closesocket(sock_clt);
-//          system("pause");
-//          return 1;
-//      }
     }
     else if (ret_val == 0)
     {
       pArg->m_pObj->deleteClient(sock_clt);
       cout << "user " << socket_index
         << " connection closed..." << endl;
+
+      emit pArg->m_pObj->clientDisconnected(sock_clt);
     }
     else
     {

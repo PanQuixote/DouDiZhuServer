@@ -55,12 +55,15 @@ Rectangle {
     return res
   }
 
-  function exitRoom(room_index, player_socket) {
-    if (room_index > room_list_view.count || room_index < 0) {
-      return -1
+  function exitRoom(player_socket) {
+
+    for (var i = 0; i < max_room_count; i++) {
+      if (room_list_view.getItem(i).playerExitRoom(player_socket)) {
+        return true
+      }
     }
 
-    return room_list_view.getItem(room_index).playerExitRoom(player_socket)
+    return false
   }
 
   function getRoomInfo(room_index) {
@@ -124,6 +127,7 @@ Rectangle {
       readonly property int someonePass: 9
 
       readonly property int someoneExitRoom: 10
+
 
 
 
@@ -549,6 +553,7 @@ Rectangle {
 
       function init() {
         currentInfo = {
+          "type": server.returnGameInfo,
           "room_id": index,
           "player_count": 0,
           "player_online": [false, false, false],

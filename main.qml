@@ -1,4 +1,5 @@
 import QtQuick 2.12
+import QtQuick.Controls 2.12
 import QtQuick.Window 2.12
 
 Window {
@@ -7,32 +8,83 @@ Window {
   height: 540
   title: qsTr("Hello World")
 
+  // server
   Server {
     id: server_main
 
+    function checkPassword(name, password) {
+      return true
+    }
+
     onGetJsonMessage: {
 
-      if (json_obj.type === wantGetRoomList) {
+      var j
 
-        return room_list.getAvailableRoomIndex()
+      if (json_obj.type === wantToLogin) {
 
-      } else if (json_obj.type === wantGetRoomInfo){
+        var name = json_obj.content.name
+        var password = json_obj.content.password
+        if (checkPassword(name, password)) {
 
-        return room_list.getRoomInfo(json_obj.request_content.room_id)
+          j = {
+            "type": returnPlayerInfo,
+            "content": {
+              "name": "",
+              "score": "",
+              "socket": sender_socket
+            }
+          }
 
-      } else if (json_obj.type === wantEnterRoom){
+          sendJsonMessage(j, sender_socket)
+        }
+      } else if (json_obj.type === wantGetRoomList) {
 
-        return room_list.getRoomInfo(json_obj.request_content.room_id)
+        var room_index_array = room_list.getAvailableRoomIndex()
 
-      } else if (json_obj.type === wantDoSomethingInRoom){
+        j = {
+          "type": returnAvailableRoomIndex,
+          "content": {
+            "index_array": room_index_array
+          }
+        }
 
-        return room_list.doSomethingInRoom(json_obj.request_content.room_id)
+        sendJsonMessage(j, sender_socket)
+      } else if (json_obj.type === wantGetRoomInfo) {
 
+        room_list.getRoomInfo(json_obj.content.room_id)
+      } else if (json_obj.type === wantEnterRoom) {
+
+        var player_index = room_list.enterRoom(json_obj.content.room_id,
+                                               json_obj.content.socket,
+                                               json_obj.content.name,
+                                               json_obj.content.score)
+
+        //        if (player_index >= 0)
+        //        {
+        //          j = {
+        //            "type": returnGameInfo,
+        //            "player_index": player_index,
+        //            "room_id": json_obj.content.room_id
+        //          }
+        //        }
+        //        sendJsonMessage(j, sender_socket)
+      } else if (json_obj.type === wantDoSomethingInRoom) {
+
+        room_list.doSomethingInRoom(json_obj.content.room_id, json_obj)
       }
+    }
 
+    onClientConnected: {
+      function_rec.addNewLog("new client connected: socket = " + client_socket)
+    }
+
+    onClientDisconnected: {
+      room_list.exitRoom(client_socket)
+      function_rec.addNewLog("client disconnected: socket = " + client_socket)
     }
   }
 
+  // room list
   RoomList {
     id: room_list
 
@@ -43,7 +95,155 @@ Window {
     width: parent.width / 2
     height: parent.height
 
+    anchors.left: parent.left
+  }
 
+  // function rec
+  Column {
+    id: function_rec
 
+    width: parent.width / 2
+    height: parent.height
+
+    anchors.right: parent.right
+
+    spacing: 20
+
+    function addNewLog(str) {
+      log_text.text += str + "\n"
+    }
+
+    function clearLog() {
+      log_text.text = ""
+    }
+
+    Rectangle {
+      id: log_text_wrapper
+
+      width: parent.width - 20
+      height: 400
+
+      border.width: 3
+
+      anchors.horizontalCenter: parent.horizontalCenter
+
+      Rectangle {
+        id: log_text_frame
+        clip: true
+        anchors.fill: parent
+        anchors.margins: 3
+        border.color: "black"
+        anchors.centerIn: parent
+        anchors.top: parent.bottom
+        anchors.left: parent.left
+        focus: true
+
+        Keys.onUpPressed: vbar.decrease()
+        Keys.onDownPressed: vbar.increase()
+
+        TextEdit {
+          id: log_text
+
+          font.bold: true
+          font.pointSize: 16
+
+          height: contentHeight
+          width: log_text_frame.width - vbar.width
+          y: -vbar.position * log_text.height
+          wrapMode: TextEdit.Wrap
+          selectByKeyboard: true
+          selectByMouse: true
+
+          onTextChanged: {
+            //            moveCursorSelection(log_text.length)
+            if (log_text.height > log_text_frame.height) {
+              vbar.increase()
+            }
+          }
+
+          MouseArea {
+            anchors.fill: parent
+            onWheel: {
+              if (wheel.angleDelta.y > 0) {
+                vbar.decrease()
+              } else {
+                vbar.increase()
+              }
+            }
+            onClicked: {
+              log_text.forceActiveFocus()
+            }
+          }
+        }
+
+        ScrollBar {
+          id: vbar
+          hoverEnabled: true
+          active: hovered || pressed
+          orientation: Qt.Vertical
+          size: log_text_frame.height / log_text.height
+          width: 10
+          anchors.top: parent.top
+          anchors.right: parent.right
+          anchors.bottom: parent.bottom
+        }
+      }
+    }
+
+    Rectangle {
+      id: enter_instruct_rec
+
+      width: parent.width - 20
+      height: 50
+
+      anchors.horizontalCenter: parent.horizontalCenter
+
+      Row {
+        anchors.fill: parent
+
+        spacing: 20
+
+        TextField {
+          id: instruct_text
+
+          width: parent.width - instruct_btn.width - parent.spacing
+          height: parent.height
+
+          horizontalAlignment: TextInput.AlignLeft
+
+          //          verticalAlignment: TextInput.AlignTop
+          font.bold: true
+          font.pointSize: 16
+        }
+
+        CustomButton {
+          id: instruct_btn
+
+          color: "grey"
+
+          text: "Run"
+
+          width: 100
+          height: parent.height
+
+          onClicked: {
+            var instruct_str = instruct_text.getText(0, instruct_text.length)
+
+            if (instruct_str === "clear") {
+              log_text.text = ""
+              instruct_text.text = ""
+              return
+            }
+
+            if (server_main.executeInstruct(instruct_str)) {
+              instruct_text.text = ""
+            } else {
+              function_rec.addNewLog(
+                    "fail to execute instruct '" + instruct_str + "'")
+            }
+          }
+        }
+      }
+    }
   }
 }
