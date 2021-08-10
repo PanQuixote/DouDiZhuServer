@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/">
+        <file>main.qml</file>
+        <file>RoomList.qml</file>
+        <file>Server.qml</file>
+    </qresource>
+</RCC>
