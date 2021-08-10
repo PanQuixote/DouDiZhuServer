@@ -88,6 +88,8 @@ bool SocketServer::init()
 
   cout << "Server started successfully..." << endl;
 
+  return true;
+
 }
 
 void SocketServer::start(bool block_to_wait_enter_instruct)
@@ -303,7 +305,7 @@ DWORD WINAPI createClientThread(LPVOID lpParameter)
   int socket_index = pArg->m_pObj->socketIndex(sock_clt);
   char buf_msg[MSG_BUF_SIZE];
   int ret_val = 0;
-  int snd_result = 0;
+
   do
   {
     if (checksock(sock_clt) == false) {
@@ -329,14 +331,15 @@ DWORD WINAPI createClientThread(LPVOID lpParameter)
 
       pArg->m_pObj->handleMessage(msg, sock_clt);
 
-      //snd_result = ::send(sock_clt, buf_msg, MSG_BUF_SIZE, 0);
-      //if (snd_result == SOCKET_ERROR)
-      //{
-      //    cerr << "Failed to send message to client!Error code: " << ::GetLastError() << "\n";
-      //    ::closesocket(sock_clt);
-      //    system("pause");
-      //    return 1;
-      //}
+//      int snd_result = 0;
+//      snd_result = ::send(sock_clt, buf_msg, MSG_BUF_SIZE, 0);
+//      if (snd_result == SOCKET_ERROR)
+//      {
+//          cerr << "Failed to send message to client!Error code: " << ::GetLastError() << "\n";
+//          ::closesocket(sock_clt);
+//          system("pause");
+//          return 1;
+//      }
     }
     else if (ret_val == 0)
     {
