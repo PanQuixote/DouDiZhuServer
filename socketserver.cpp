@@ -208,6 +208,8 @@ int SocketServer::handleMessage(string msg, SOCKET sender_socket)
 //  return 0;
 
   emit getMessageFromClient(msg, sender_socket);
+
+  return 0;
 }
 
 
