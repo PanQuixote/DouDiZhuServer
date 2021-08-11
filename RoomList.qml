@@ -43,6 +43,24 @@ Rectangle {
     return res
   }
 
+  function getAvailableRoomInfo() {
+    var res = []
+    for (var i = 0; i < room_list_view.count; i++) {
+      var room_i = room_list_view.getItem(i)
+      if (room_i.onlinePlayerCount < 3) {
+        var info = {
+          "room_id": i,
+          "player_count": room_i.onlinePlayerCount,
+          "base_score": room_i.baseScore
+        }
+
+        res.push(info)
+      }
+    }
+
+    return res
+  }
+
   function enterRoom(room_index, player_socket, player_name, player_score) {
     if (room_index > room_list_view.count || room_index < 0) {
       return -1

@@ -167,10 +167,12 @@ bool SocketServer::sendMessage(string msg, int receiver_socket)
   }
 
   const char* c = msg.c_str();
-  if (send(receiver_socket, c, msg.length(), 0) == SOCKET_ERROR) {
+  if (send(receiver_socket, c, MSG_BUF_SIZE, 0) == SOCKET_ERROR) {
     cout << "fail to send message to client:  socket = " << receiver_socket
       << ", index = " << socketIndex(receiver_socket) << endl;
     return false;
+  } else {
+    cout << "send to client:" << c;
   }
   return true;
 }
@@ -192,7 +194,7 @@ bool SocketServer::broadcastMessage(string msg)
       continue;
     }
 
-    if (send(client_manager.getSocket(i), c, msg.length(), 0) == SOCKET_ERROR) {
+    if (sendMessage(msg, client_manager.getSocket(i)) != true) {
       cout << "fail to send message to client:  socket = " << client_manager.getSocket(i)
         << ", index = " << i << endl;
 
@@ -204,15 +206,6 @@ bool SocketServer::broadcastMessage(string msg)
 
 int SocketServer::handleMessage(string msg, int sender_socket)
 {
-//  cout << "Message received: " << msg << ", socket = " << sender_socket
-//    << ", index = " << socketIndex(sender_socket) << endl;
-
-//  if (sendMessage(msg, sender_socket)) {
-//    return 0;
-//  }
-//  else {
-//    return 1;
-//  }
 
   QString msg_q = QString::fromStdString(msg);
 

@@ -8,9 +8,9 @@ SocketServer {
 
 
   // request get from client
-  readonly property int wantToLogin: 0
-  readonly property int wantGetRoomList: 1
-  readonly property int wantGetRoomInfo: 2
+  readonly property int wantLogin: 0
+  readonly property int wantGetAvailableRoomInfo: 1
+  readonly property int wantGetCurrentRoomInfo: 2
   readonly property int wantEnterRoom: 3
   readonly property int wantDoSomethingInRoom: 4
 
@@ -18,7 +18,7 @@ SocketServer {
   // return to client
   readonly property int returnGameInfo: 9
   readonly property int returnPlayerInfo: 10
-  readonly property int returnAvailableRoomIndex: 11
+  readonly property int returnAvailableRoomInfo: 11
   readonly property int returnRoomInfo: 12
 
 

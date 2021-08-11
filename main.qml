@@ -20,38 +20,39 @@ Window {
 
       var j
 
-      if (json_obj.type === wantToLogin) {
+      if (json_obj.type === wantLogin) {
 
         var name = json_obj.content.name
         var password = json_obj.content.password
-        if (checkPassword(name, password)) {
-
-          j = {
-            "type": returnPlayerInfo,
-            "content": {
-              "name": "",
-              "score": "",
-              "socket": sender_socket
-            }
-          }
-
-          sendJsonMessage(j, sender_socket)
-        }
-      } else if (json_obj.type === wantGetRoomList) {
-
-        var room_index_array = room_list.getAvailableRoomIndex()
+        var success = checkPassword(name, password)
 
         j = {
-          "type": returnAvailableRoomIndex,
+          "type": returnPlayerInfo,
           "content": {
-            "index_array": room_index_array
+            "success": success,
+            "name": name,
+            "score": password,
+            "socket": sender_socket
           }
         }
 
         sendJsonMessage(j, sender_socket)
-      } else if (json_obj.type === wantGetRoomInfo) {
+
+      } else if (json_obj.type === wantGetAvailableRoomInfo) {
+
+        var room_info_array = room_list.getAvailableRoomInfo()
+
+        j = {
+          "type": returnAvailableRoomInfo,
+          "content": room_info_array
+        }
+
+        sendJsonMessage(j, sender_socket)
+
+      } else if (json_obj.type === wantGetCurrentRoomInfo) {
 
         room_list.getRoomInfo(json_obj.content.room_id)
+        
       } else if (json_obj.type === wantEnterRoom) {
 
         var player_index = room_list.enterRoom(json_obj.content.room_id,
