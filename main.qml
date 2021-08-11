@@ -51,7 +51,9 @@ Window {
 
       } else if (json_obj.type === wantGetCurrentRoomInfo) {
 
-        room_list.getRoomInfo(json_obj.content.room_id)
+        j = room_list.getRoomInfo(json_obj.content.room_id)
+        j["type"] = returnGameInfo
+        sendJsonMessage(j, sender_socket)
         
       } else if (json_obj.type === wantEnterRoom) {
 
@@ -60,18 +62,24 @@ Window {
                                                json_obj.content.name,
                                                json_obj.content.score)
 
-        //        if (player_index >= 0)
-        //        {
-        //          j = {
-        //            "type": returnGameInfo,
-        //            "player_index": player_index,
-        //            "room_id": json_obj.content.room_id
-        //          }
-        //        }
-        //        sendJsonMessage(j, sender_socket)
+        if (player_index >= 0)
+        {
+          j = {
+            "type": returnPlayerIndex,
+
+            "content": {
+              "room_id": json_obj.content.room_id,
+              "player_index": player_index
+            }
+          }
+
+          sendJsonMessage(j, sender_socket)
+        }
+
       } else if (json_obj.type === wantDoSomethingInRoom) {
 
         room_list.doSomethingInRoom(json_obj.content.room_id, json_obj)
+
       }
     }
 

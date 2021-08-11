@@ -188,7 +188,6 @@ bool SocketServer::broadcastMessage(string msg)
 {
   bool flag = true;
 
-  const char* c = msg.c_str();
   for (int i = 0; i < MAX_CLIENT_COUNT; i++) {
     if (client_manager.isValid(i) == false) {
       continue;

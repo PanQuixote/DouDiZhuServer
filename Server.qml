@@ -20,13 +20,14 @@ SocketServer {
   readonly property int returnPlayerInfo: 10
   readonly property int returnAvailableRoomInfo: 11
   readonly property int returnRoomInfo: 12
+  readonly property int returnPlayerIndex: 13
 
 
 
-  property var templet_of_json_from_client: {
-    "type": wantGetRoomList,
-    "content": {}
-  }
+//  property var templet_of_json_from_client: {
+//    "type": wantLogin,
+//    "content": {}
+//  }
 
   function isJsonStr(str) {
     if (typeof str == 'string') {

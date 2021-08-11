@@ -448,6 +448,7 @@ Rectangle {
         if (onlinePlayerCount < 3) {
 
           for (var i = 0; i < 3; i++) {
+
             if (playerOnline[i] !== true) {
 
               playerOnline[i] = true
@@ -462,11 +463,20 @@ Rectangle {
               currentInfo.target_index = i
               currentInfo.player_info_array[i].name = player_name
               currentInfo.player_info_array[i].score = player_score
-              sendToAllPlayer()
+
+              for (var x = 0; x < 3; x++) {
+                if (x !== i) {
+                  sendToPlayer(x)
+                }
+              }
 
 
               currentInfo.state = waitReady
-              sendToAllPlayer()
+              for (var y = 0; y < 3; y++) {
+                if (y !== i) {
+                  sendToPlayer(y)
+                }
+              }
 
               return i
             }
@@ -480,7 +490,7 @@ Rectangle {
       function playerExitRoom(player_socket) {
 
         var i = playerSocket.indexOf(player_socket)
-        if (i > 0) {
+        if (i >= 0) {
 
           playerOnline[i] = false
           playerSocket[i] = -1
@@ -492,8 +502,14 @@ Rectangle {
           currentInfo.player_online = playerOnline
           currentInfo.player_ready[i] = false
           currentInfo.target_index = i
+          currentInfo.player_info_array[i].socket = -1
           currentInfo.player_info_array[i].name = ""
           currentInfo.player_info_array[i].score = -1
+          currentInfo.player_info_array[i].ready = false
+          currentInfo.player_info_array[i].is_landlord = false
+          currentInfo.player_info_array[i].win = false
+          currentInfo.player_info_array[i].card_count = -1
+          currentInfo.player_info_array[i].current_card = []
           sendToAllPlayer()
 
           if (currentInfo.state !== waitReady) {  // if game is running
@@ -541,6 +557,15 @@ Rectangle {
         return flag
       }
 
+      function sendToPlayer(player_index) {
+
+        if (player_index >= 0 && player_index <= 2 && playerOnline[player_index]) {
+          return server.sendJsonMessage(currentInfo, playerSocket[player_index])
+        }
+        return false
+
+      }
+
       function nextPlayerIndex(player_index) {
         return player_index + 1 > 2 ? 0 : player_index + 1
       }
@@ -579,8 +604,7 @@ Rectangle {
           "asked_call": [false, false, false],
           "card_counter": [4, 4, 4, 4, 4,
                            4, 4, 4, 4, 4,
-                           4, 4, 4, 4, 4,
-                           1, 1],
+                           4, 4, 4, 1, 1],
           "extra_card": [],
           "state": waitReady,
           "remain_time": 20,
@@ -641,8 +665,7 @@ Rectangle {
         currentInfo.asked_call = [false, false, false]
         currentInfo.card_counter = [4, 4, 4, 4, 4,
                                     4, 4, 4, 4, 4,
-                                    4, 4, 4, 4, 4,
-                                    1, 1]
+                                    4, 4, 4, 1, 1]
         currentInfo.extra_card = []
         currentInfo.remain_time = 20
         currentInfo.last_index = -1
