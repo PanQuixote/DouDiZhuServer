@@ -76,12 +76,12 @@ Rectangle {
   function exitRoom(player_socket) {
 
     for (var i = 0; i < max_room_count; i++) {
-      if (room_list_view.getItem(i).playerExitRoom(player_socket)) {
-        return true
+      if (room_list_view.getItem(i).playerExitRoom(player_socket) >= 0) {
+        return i
       }
     }
 
-    return false
+    return -1
   }
 
   function getRoomInfo(room_index) {
@@ -113,10 +113,18 @@ Rectangle {
       width: parent.width
       height: 150
 
-      color: "lightgrey"
+      color: onlinePlayerCount === 0
+             ? "lightgrey"
+             : onlinePlayerCount === 1
+               ? "lightyellow"
+               : onlinePlayerCount === 2
+                 ? "orange"
+                 : "orangered"
 
       property int room_id: index
       property int onlinePlayerCount: 0
+
+      property bool gaming: false
 
       property int baseScore: 1
 
@@ -128,23 +136,20 @@ Rectangle {
 
       property var currentInfo  // will be sent to client
 
-      readonly property int someoneEnterRoom: 0
 
+      // state of currentInfo
+      readonly property int someoneEnterRoom: 0
       readonly property int waitReady: 1
       readonly property int waitCall: 2
-
       readonly property int waitPut: 3
       readonly property int finish: 4
-
       readonly property int someoneReady: 5
-
-      readonly property int someoneCall: 6
-      readonly property int someoneNotCall: 7
-
-      readonly property int someonePut: 8
-      readonly property int someonePass: 9
-
-      readonly property int someoneExitRoom: 10
+      readonly property int someoneCancelReady: 6
+      readonly property int someoneCall: 7
+      readonly property int someoneNotCall: 8
+      readonly property int someonePut: 9
+      readonly property int someonePass: 10
+      readonly property int someoneExitRoom: 11
 
 
 
@@ -152,12 +157,11 @@ Rectangle {
       property var messageFromPlayer  // send from client
 
       readonly property int wantReady: 0
-
-      readonly property int wantCall: 1
-      readonly property int wantNotCall: 2
-
-      readonly property int wantPut: 3
-      readonly property int wantPass: 4
+      readonly property int wantCancelReady: 1
+      readonly property int wantCall: 2
+      readonly property int wantNotCall: 3
+      readonly property int wantPut: 4
+      readonly property int wantPass: 5
 
 
 //      property var templete_of_json_from_player: {
@@ -258,6 +262,8 @@ Rectangle {
 
             restart()
 
+            gaming = true
+
             currentInfo.state = waitCall
             currentInfo.remain_time = maxThinkTime
             currentInfo.target_index = getRandomInt(0, 2)
@@ -284,6 +290,20 @@ Rectangle {
           }
 
 
+
+        } else if (messageFromPlayer.type === wantCancelReady) {
+
+          currentInfo.player_ready[player_index] = false
+          currentInfo.player_info_array[player_index].ready = false
+
+          currentInfo.state = someoneCancelReady
+          currentInfo.target_index = player_index
+
+          sendToAllPlayer()
+
+          currentInfo.state = waitReady
+
+          sendToAllPlayer()
 
         } else if (messageFromPlayer.type === wantCall) {
 
@@ -395,6 +415,10 @@ Rectangle {
 
 
           if (currentInfo.player_info_array[player_index].card_count === 0) { // finish
+
+            gaming = false
+
+            timer.stop()
 
             var landlord_win = currentInfo.player_info_array[player_index].is_landlord
 
@@ -512,7 +536,12 @@ Rectangle {
           currentInfo.player_info_array[i].current_card = []
           sendToAllPlayer()
 
-          if (currentInfo.state !== waitReady) {  // if game is running
+          if (gaming) {  // if game is running
+
+            gaming = false
+
+            timer.stop()
+
             currentInfo.state = finish
             for (var j = 0; j < 3; j++) {
 

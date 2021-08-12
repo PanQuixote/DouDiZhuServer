@@ -40,7 +40,7 @@ Window {
 
       } else if (json_obj.type === wantGetAvailableRoomInfo) {
 
-        var room_info_array = room_list.getAvailableRoomInfo()
+        let room_info_array = room_list.getAvailableRoomInfo()
 
         j = {
           "type": returnAvailableRoomInfo,
@@ -62,6 +62,7 @@ Window {
                                                json_obj.content.name,
                                                json_obj.content.score)
 
+        // enter room success
         if (player_index >= 0)
         {
           j = {
@@ -74,11 +75,35 @@ Window {
           }
 
           sendJsonMessage(j, sender_socket)
+
+          function_rec.addNewLog("client enter room " + json_obj.content.room_id +
+                                 ", index = " + player_index +
+                                 ", socket = " + client_socket)
+        }
+
+      } else if (json_obj.type === wantExitRoom) {
+
+        var room_index = room_list.exitRoom(json_obj.content.socket)
+
+        // exit room success
+        if (room_index >= 0)
+        {
+          let room_info_array = room_list.getAvailableRoomInfo()
+
+          j = {
+            "type": returnAvailableRoomInfo,
+            "content": room_info_array
+          }
+
+          for (let i = 0; i < server_main.clientCount(); i++) {
+            sendJsonMessage(j, server_main.getSocket(i))
+          }
+
         }
 
       } else if (json_obj.type === wantDoSomethingInRoom) {
 
-        room_list.doSomethingInRoom(json_obj.content.room_id, json_obj)
+        room_list.doSomethingInRoom(json_obj.content.room_id, json_obj.content)
 
       }
     }
@@ -88,7 +113,21 @@ Window {
     }
 
     onClientDisconnected: {
-      room_list.exitRoom(client_socket)
+      var room_id = room_list.exitRoom(client_socket)
+      if (room_id > 0) {
+        function_rec.addNewLog("client exit room " + room_id + ", socket = " + client_socket)
+
+        let room_info_array = room_list.getAvailableRoomInfo()
+
+        var j = {
+          "type": returnAvailableRoomInfo,
+          "content": room_info_array
+        }
+
+        for (let i = 0; i < server_main.clientCount(); i++) {
+          sendJsonMessage(j, server_main.getSocket(i))
+        }
+      }
       function_rec.addNewLog("client disconnected: socket = " + client_socket)
     }
   }
