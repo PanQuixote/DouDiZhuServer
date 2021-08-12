@@ -172,7 +172,7 @@ bool SocketServer::sendMessage(string msg, int receiver_socket)
       << ", index = " << socketIndex(receiver_socket) << endl;
     return false;
   } else {
-    cout << "send to client:" << c;
+//    cout << "send to client:" << c;
   }
   return true;
 }

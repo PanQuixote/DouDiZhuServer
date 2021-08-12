@@ -272,7 +272,8 @@ Rectangle {
 
             for (i = 0; i < 3; i++) {
               currentInfo.player_info_array[i].card_count = 17
-              currentInfo.player_info_array[i].current_card = sortByBigToSmall(card_array.slice(i * 17, (i + 1)) * 17)
+              var current_card = card_array.slice(i * 17, (i + 1) * 17)
+              currentInfo.player_info_array[i].current_card = sortByBigToSmall(current_card)
             }
 
             currentInfo.extra_card = sortByBigToSmall(card_array.slice(51, 54))
@@ -316,7 +317,6 @@ Rectangle {
 
           let t = currentInfo.player_info_array[player_index].current_card.concat(currentInfo.extra_card)
           currentInfo.player_info_array[player_index].current_card = t
-
           currentInfo.player_info_array[player_index].card_count = 20
 
           sendToAllPlayer()
@@ -325,6 +325,7 @@ Rectangle {
           currentInfo.state = waitPut
           currentInfo.remain_time = maxThinkTime
           currentInfo.target_index = player_index
+          currentInfo.last_index = player_index
 
           sendToAllPlayer()
 
@@ -356,6 +357,7 @@ Rectangle {
             for (i = 0; i < 3; i++) {
               currentInfo.player_info_array[i].win = false
             }
+
             sendToAllPlayer()
 
           } else {  // someone have not be ask, ask him
@@ -381,20 +383,40 @@ Rectangle {
           currentInfo.card_array = messageFromPlayer.card_array
 
 
-          var put_card_length = messageFromPlayer.card_array.length
+          let put_card_length = messageFromPlayer.card_array.length
+          let put_card = messageFromPlayer.card_array
+          let current_card_length = currentInfo.player_info_array[player_index].current_card.length
+
+//          console.log("message card_array: ", messageFromPlayer.card_array)
+//          console.log("card_array: ", currentInfo.player_info_array[player_index].current_card)
+
+          for (i = current_card_length - 1; i >= 0; i--) {
+            let current_card_i = currentInfo.player_info_array[player_index].current_card[i]
+            if (put_card.indexOf(current_card_i) >= 0) {
+
+              currentInfo.player_info_array[player_index].current_card.splice(i, 1)
+
+            } else {
+
+//              console.log("not in current card")
+
+            }
+          }
+          currentInfo.player_info_array[player_index].card_count
+              = currentInfo.player_info_array[player_index].current_card.length
+
+//          console.log("after card_array: ", currentInfo.player_info_array[player_index].current_card)
+
+
           var booom_flag = put_card_length === 4
                            ? true
                            : false
           for (i = 0; i < put_card_length; i++) {
 
             if (i !== 0 && messageFromPlayer.card_array[i] !== messageFromPlayer.card_array[i - 1]) {
-              booom_flag = false
+              booom_flag = false  // not boom
             }
 
-            let t = currentInfo.player_info_array[player_index].indexOf(messageFromPlayer.card_array[i])
-            if (t > 0) {
-              currentInfo.player_info_array[player_index].splice(t, 1)
-            }
           }
 
           // king boom

@@ -25,13 +25,14 @@ Window {
         var name = json_obj.content.name
         var password = json_obj.content.password
         var success = checkPassword(name, password)
+        var score = 0
 
         j = {
           "type": returnPlayerInfo,
           "content": {
             "success": success,
             "name": name,
-            "score": password,
+            "score": score,
             "socket": sender_socket
           }
         }
@@ -78,7 +79,7 @@ Window {
 
           function_rec.addNewLog("client enter room " + json_obj.content.room_id +
                                  ", index = " + player_index +
-                                 ", socket = " + client_socket)
+                                 ", socket = " + json_obj.content.socket)
         }
 
       } else if (json_obj.type === wantExitRoom) {
