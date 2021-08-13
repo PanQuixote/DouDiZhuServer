@@ -22,7 +22,7 @@ using namespace std;
 
 // how to use it:
 // Server s;
-// s.WaitForClient();
+// s.start();
 // do something in handleMessage();
 
 class ClientManager: public QObject

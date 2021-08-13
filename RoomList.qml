@@ -396,9 +396,19 @@ Rectangle {
 
               currentInfo.player_info_array[player_index].current_card.splice(i, 1)
 
-            } else {
+              if (current_card_i === 52) {
 
-//              console.log("not in current card")
+                currentInfo.card_counter[13] -= 1
+
+              } else if (current_card_i === 53) {
+
+                currentInfo.card_counter[14] -= 1
+
+              } else {
+
+                currentInfo.card_counter[Math.floor(current_card_i / 4) + 3] -= 1
+
+              }
 
             }
           }
@@ -543,20 +553,20 @@ Rectangle {
           onlinePlayerCount -= 1
 
 
-          currentInfo.state = someoneExitRoom
-          currentInfo.player_count = onlinePlayerCount
-          currentInfo.player_online = playerOnline
-          currentInfo.player_ready[i] = false
-          currentInfo.target_index = i
-          currentInfo.player_info_array[i].socket = -1
-          currentInfo.player_info_array[i].name = ""
-          currentInfo.player_info_array[i].score = -1
-          currentInfo.player_info_array[i].ready = false
-          currentInfo.player_info_array[i].is_landlord = false
-          currentInfo.player_info_array[i].win = false
-          currentInfo.player_info_array[i].card_count = -1
-          currentInfo.player_info_array[i].current_card = []
-          sendToAllPlayer()
+//          currentInfo.state = someoneExitRoom
+//          currentInfo.player_count = onlinePlayerCount
+//          currentInfo.player_online = playerOnline
+//          currentInfo.player_ready[i] = false
+//          currentInfo.target_index = i
+//          currentInfo.player_info_array[i].socket = -1
+//          currentInfo.player_info_array[i].name = ""
+//          currentInfo.player_info_array[i].score = -1
+//          currentInfo.player_info_array[i].ready = false
+//          currentInfo.player_info_array[i].is_landlord = false
+//          currentInfo.player_info_array[i].win = false
+//          currentInfo.player_info_array[i].card_count = -1
+//          currentInfo.player_info_array[i].current_card = []
+//          sendToAllPlayer()
 
           if (gaming) {  // if game is running
 
@@ -567,17 +577,13 @@ Rectangle {
             currentInfo.state = finish
             for (var j = 0; j < 3; j++) {
 
-              if (j === i) {
-                currentInfo.player_info_array[i].win = false
-              } else {
-                currentInfo.player_info_array[i].win = true
-              }
+              currentInfo.player_info_array[i].win = (j !== i)
 
             }
             sendToAllPlayer()
 
 
-            currentInfo.state = waitReady
+            restart()
             sendToAllPlayer()
 
           } else {
