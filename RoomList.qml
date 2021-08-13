@@ -396,24 +396,28 @@ Rectangle {
 
               currentInfo.player_info_array[player_index].current_card.splice(i, 1)
 
-              if (current_card_i === 52) {
-
-                currentInfo.card_counter[13] -= 1
-
-              } else if (current_card_i === 53) {
-
-                currentInfo.card_counter[14] -= 1
-
-              } else {
-
-                currentInfo.card_counter[Math.floor(current_card_i / 4) + 3] -= 1
-
-              }
-
             }
           }
           currentInfo.player_info_array[player_index].card_count
               = currentInfo.player_info_array[player_index].current_card.length
+
+
+          for (i = 0; i < put_card_length; i++) {
+            var put_card_i = put_card[i]
+            if (put_card_i === 52) {
+
+              currentInfo.card_counter[13] -= 1
+
+            } else if (put_card_i === 53) {
+
+              currentInfo.card_counter[14] -= 1
+
+            } else {
+
+              currentInfo.card_counter[Math.floor(put_card_i / 4)] -= 1
+
+            }
+          }
 
 //          console.log("after card_array: ", currentInfo.player_info_array[player_index].current_card)
 
@@ -457,7 +461,7 @@ Rectangle {
             currentInfo.state = finish
             for ( i = 0; i < 3; i++) {
               var player_i_is_landlord = currentInfo.player_info_array[i].is_landlord
-              currentInfo.player_info_array[player_index].win = (player_i_is_landlord === landlord_win)
+              currentInfo.player_info_array[i].win = (player_i_is_landlord === landlord_win)
             }
             sendToAllPlayer()
 
@@ -550,23 +554,9 @@ Rectangle {
 
           playerOnline[i] = false
           playerSocket[i] = -1
+
           onlinePlayerCount -= 1
 
-
-//          currentInfo.state = someoneExitRoom
-//          currentInfo.player_count = onlinePlayerCount
-//          currentInfo.player_online = playerOnline
-//          currentInfo.player_ready[i] = false
-//          currentInfo.target_index = i
-//          currentInfo.player_info_array[i].socket = -1
-//          currentInfo.player_info_array[i].name = ""
-//          currentInfo.player_info_array[i].score = -1
-//          currentInfo.player_info_array[i].ready = false
-//          currentInfo.player_info_array[i].is_landlord = false
-//          currentInfo.player_info_array[i].win = false
-//          currentInfo.player_info_array[i].card_count = -1
-//          currentInfo.player_info_array[i].current_card = []
-//          sendToAllPlayer()
 
           if (gaming) {  // if game is running
 
@@ -577,13 +567,9 @@ Rectangle {
             currentInfo.state = finish
             for (var j = 0; j < 3; j++) {
 
-              currentInfo.player_info_array[i].win = (j !== i)
+              currentInfo.player_info_array[j].win = (j !== i)
 
             }
-            sendToAllPlayer()
-
-
-            restart()
             sendToAllPlayer()
 
           } else {
@@ -592,6 +578,9 @@ Rectangle {
             sendToAllPlayer()
 
           }
+
+          restart()
+          sendToAllPlayer()
 
 
         }
@@ -718,7 +707,7 @@ Rectangle {
       function restart() {
 
         currentInfo.state = waitReady
-
+        currentInfo.player_ready = [false, false, false]
         currentInfo.asked_call = [false, false, false]
         currentInfo.card_counter = [4, 4, 4, 4, 4,
                                     4, 4, 4, 4, 4,
