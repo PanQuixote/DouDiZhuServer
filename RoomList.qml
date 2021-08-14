@@ -156,6 +156,7 @@ Rectangle {
 
       property var messageFromPlayer  // send from client
 
+      // type
       readonly property int wantReady: 0
       readonly property int wantCancelReady: 1
       readonly property int wantCall: 2
@@ -164,67 +165,16 @@ Rectangle {
       readonly property int wantPass: 5
 
 
-//      property var templete_of_json_from_player: {
+      property var templete_of_json_from_player: {
 
-//        "room_id": 0,
-//        "player_index": 0,
-//        "socket": 0,
+        "room_id": 0,
+        "player_index": 0,
+        "socket": 0,
 
-//        "type": wantReady,
+        "type": wantReady,
 
-//        "card_array": []
+        "card_array": []
 
-//      }
-
-
-      CountDownTimer {
-        id: timer
-
-        width: 0
-        height: 0
-        visible: false
-
-        onTimerout: {
-
-          var auto_not_call_message
-
-          if (single_room.currentInfo.sate === waitCall) {
-
-            auto_not_call_message = {
-              "room_id": single_room.room_id,
-              "player_index": single_room.currentInfo.target_index,
-              "socket": single_room.playerSocket[single_room.currentInfo.target_index],
-
-              "type": single_room.wantNotCall,
-
-              "card_array": []
-            }
-
-            single_room.messageFromPlayer = auto_not_call_message
-
-          } else if (single_room.currentInfo.sate === waitPut) {
-
-            // the index of card witch will be put
-            var auto_put_card_index = single_room.currentInfo.player_info_array[single_room.currentInfo.target_index]
-                                        .current_card[single_room.currentInfo.player_info_array[single_room.currentInfo.target_index].card_count - 1]
-
-            auto_not_call_message = {
-              "room_id": single_room.room_id,
-              "player_index": single_room.currentInfo.target_index,
-              "socket": single_room.playerSocket[single_room.currentInfo.target_index],
-
-              "type": single_room.currentInfo.target_index === single_room.currentInfo.last_index
-                      ? single_room.wantPut
-                      : single_room.wantPass,
-
-              "card_array": [auto_put_card_index]
-            }
-
-            single_room.messageFromPlayer = auto_not_call_message
-
-          }
-
-        }
       }
 
       Component.onCompleted: {
@@ -797,6 +747,58 @@ Rectangle {
           horizontalAlignment: Text.AlignLeft
         }
 
+      }
+
+      CountDownTimer {
+        id: timer
+
+        width: 0
+        height: 0
+        visible: false
+
+        onTimerout: {
+
+          var auto_not_call_message
+
+          if (single_room.currentInfo.sate === waitCall) {
+
+            auto_not_call_message = {
+
+              "room_id": single_room.room_id,
+              "player_index": single_room.currentInfo.target_index,
+              "socket": single_room.playerSocket[single_room.currentInfo.target_index],
+
+              "type": single_room.wantNotCall,
+
+              "card_array": []
+            }
+
+            single_room.messageFromPlayer = auto_not_call_message
+
+          } else if (single_room.currentInfo.sate === waitPut) {
+
+            // the index of card witch will be put
+            var auto_put_card_index = single_room.currentInfo.player_info_array[single_room.currentInfo.target_index]
+                                        .current_card[single_room.currentInfo.player_info_array[single_room.currentInfo.target_index].card_count - 1]
+
+            auto_not_call_message = {
+
+              "room_id": single_room.room_id,
+              "player_index": single_room.currentInfo.target_index,
+              "socket": single_room.playerSocket[single_room.currentInfo.target_index],
+
+              "type": single_room.currentInfo.target_index === single_room.currentInfo.last_index
+                      ? single_room.wantPut
+                      : single_room.wantPass,
+
+              "card_array": [auto_put_card_index]
+            }
+
+            single_room.messageFromPlayer = auto_not_call_message
+
+          }
+
+        }
       }
 
     }
