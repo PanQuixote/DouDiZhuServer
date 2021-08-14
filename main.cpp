@@ -2,6 +2,7 @@
 #include <QQmlApplicationEngine>
 
 #include "socketserver.h"
+#include "localfileoperator.h"
 
 int main(int argc, char *argv[])
 {
@@ -10,6 +11,7 @@ int main(int argc, char *argv[])
   QGuiApplication app(argc, argv);
 
   qmlRegisterType<SocketServer>("qt.SocketServer", 1, 0, "SocketServer");
+  qmlRegisterType<LocalFileOperator>("qt.LocalFileOperator", 1, 0, "LocalFileOperator");
 
   QQmlApplicationEngine engine;
   const QUrl url(QStringLiteral("qrc:/main.qml"));

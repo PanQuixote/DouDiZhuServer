@@ -14,6 +14,7 @@ SocketServer {
   readonly property int wantEnterRoom: 3
   readonly property int wantExitRoom: 4
   readonly property int wantDoSomethingInRoom: 5
+  readonly property int wantRegister: 6
 
 
   // return to client

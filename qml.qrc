@@ -3,5 +3,6 @@
         <file>main.qml</file>
         <file>RoomList.qml</file>
         <file>Server.qml</file>
+        <file>Configuration.qml</file>
     </qresource>
 </RCC>

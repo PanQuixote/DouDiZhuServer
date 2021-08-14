@@ -12,8 +12,36 @@ Window {
   Server {
     id: server_main
 
+    property var name_list: ["wolf", "son", "grandson"]
+    property var password_list: ["1234", "123", "123"]
+    property var score_list: [0, 0, 0]
+
     function checkPassword(name, password) {
+
+
+      var index = name_list.indexOf(name)
+      if (index < 0) {
+        return false
+      }
+
+      if (password_list[index] !== password) {
+        return false
+      }
+
       return true
+    }
+
+    function checkName(name, password) {
+      return false
+    }
+
+    function getScore(name) {
+      var index = name_list.indexOf(name)
+      if (index < 0) {
+        return -9999
+      }
+
+      return score_list[index]
     }
 
     onGetJsonMessage: {
@@ -22,10 +50,29 @@ Window {
 
       if (json_obj.type === wantLogin) {
 
-        var name = json_obj.content.name
-        var password = json_obj.content.password
-        var success = checkPassword(name, password)
-        var score = 0
+        let name = json_obj.content.name
+        let password = json_obj.content.password
+        let success = checkPassword(name, password)
+        let score = 0
+
+        j = {
+          "type": returnPlayerInfo,
+          "content": {
+            "success": success,
+            "name": name,
+            "score": score,
+            "socket": sender_socket
+          }
+        }
+
+        sendJsonMessage(j, sender_socket)
+
+      } else if (json_obj.type === wantRegister) {
+
+        let name = json_obj.content.name
+        let password = json_obj.content.password
+        let success = checkName(name, password)
+        let score = 0
 
         j = {
           "type": returnPlayerInfo,

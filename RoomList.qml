@@ -133,6 +133,7 @@ Rectangle {
 
       property int maxThinkTime: 20
 
+      property bool initFlag: false
 
       property var currentInfo  // will be sent to client
 
@@ -450,6 +451,27 @@ Rectangle {
         }
       }
 
+      onOnlinePlayerCountChanged: {
+        init()
+        currentInfo.player_count = onlinePlayerCount
+      }
+
+      onGamingChanged: {
+        init()
+        currentInfo.gaming = gaming
+      }
+
+      onPlayerOnlineChanged: {
+        init()
+        currentInfo.player_online = playerOnline
+      }
+
+      onPlayerSocketChanged: {
+        init()
+        for (var i = 0; i < 3; i++) {
+          currentInfo.player_info_array[i].socket = playerSocket[i]
+        }
+      }
 
 
       // if success return index of player, else return -1
@@ -467,8 +489,6 @@ Rectangle {
 
 
               currentInfo.state = someoneEnterRoom
-              currentInfo.player_count = onlinePlayerCount
-              currentInfo.player_online = playerOnline
               currentInfo.player_ready[i] = false
               currentInfo.target_index = i
               currentInfo.player_info_array[i].name = player_name
@@ -506,11 +526,6 @@ Rectangle {
           onlinePlayerCount -= 1
           playerOnline[i] = false
           playerSocket[i] = -1
-
-
-          currentInfo.player_count = onlinePlayerCount
-          currentInfo.player_online = playerOnline
-          currentInfo.player_info_array[i].socket = playerSocket[i]
 
 
           if (gaming) {  // if game is running
@@ -596,11 +611,17 @@ Rectangle {
       }
 
       function init() {
+
+        if (initFlag) {
+          return
+        }
+
         currentInfo = {
           "type": server.returnGameInfo,
           "room_id": index,
           "player_count": 0,
           "player_online": [false, false, false],
+          "gaming": false,
           "player_ready": [false, false, false],
           "asked_call": [false, false, false],
           "card_counter": [4, 4, 4, 4, 4,
@@ -657,6 +678,8 @@ Rectangle {
                 }
           ]
         }
+
+        initFlag = true
       }
 
       function restart() {
