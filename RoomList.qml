@@ -502,10 +502,15 @@ Rectangle {
         var i = playerSocket.indexOf(player_socket)
         if (i >= 0) {
 
+
+          onlinePlayerCount -= 1
           playerOnline[i] = false
           playerSocket[i] = -1
 
-          onlinePlayerCount -= 1
+
+          currentInfo.player_count = onlinePlayerCount
+          currentInfo.player_online = playerOnline
+          currentInfo.player_info_array[i].socket = playerSocket[i]
 
 
           if (gaming) {  // if game is running
