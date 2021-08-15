@@ -261,6 +261,11 @@ Rectangle {
 
         } else if (messageFromPlayer.type === wantCall) {
 
+          // not his turn
+          if (currentInfo.target_index !== player_index) {
+            return
+          }
+
           timer.stop()
 
           currentInfo.state = someoneCall
@@ -286,6 +291,11 @@ Rectangle {
           timer.restart(maxThinkTime)
 
         } else if (messageFromPlayer.type === wantNotCall) {
+
+          // not his turn
+          if (currentInfo.target_index !== player_index) {
+            return
+          }
 
           timer.stop()
 
@@ -328,6 +338,28 @@ Rectangle {
 
         } else if (messageFromPlayer.type === wantPut) {
 
+          // not his turn
+          if (currentInfo.target_index !== player_index) {
+            return
+          }
+
+
+          let put_card = messageFromPlayer.card_array
+          let put_card_length = messageFromPlayer.card_array.length
+          let current_card = currentInfo.player_info_array[player_index].current_card
+
+
+          // check if all card in put_card are also in current_card or not
+          for (i = 0; i < put_card_length; i++) {
+            let put_card_index_in_current_card = current_card.indexOf(put_card[i])
+            if (put_card_index_in_current_card >= 0) {
+              currentInfo.player_info_array[player_index].current_card.splice(put_card_index_in_current_card, 1)
+            } else {  // put_card[i] not in current_card
+              return
+            }
+          }
+
+
           timer.stop()
 
           currentInfo.state = someonePut
@@ -336,25 +368,13 @@ Rectangle {
           currentInfo.card_array = messageFromPlayer.card_array
 
 
-          let put_card_length = messageFromPlayer.card_array.length
-          let put_card = messageFromPlayer.card_array
-          let current_card_length = currentInfo.player_info_array[player_index].current_card.length
 
-//          console.log("message card_array: ", messageFromPlayer.card_array)
-//          console.log("card_array: ", currentInfo.player_info_array[player_index].current_card)
-
-          for (i = current_card_length - 1; i >= 0; i--) {
-            let current_card_i = currentInfo.player_info_array[player_index].current_card[i]
-            if (put_card.indexOf(current_card_i) >= 0) {
-
-              currentInfo.player_info_array[player_index].current_card.splice(i, 1)
-
-            }
-          }
+          // update card_count
           currentInfo.player_info_array[player_index].card_count
               = currentInfo.player_info_array[player_index].current_card.length
 
 
+          // update card_counter
           for (i = 0; i < put_card_length; i++) {
             var put_card_i = put_card[i]
             if (put_card_i === 52) {
@@ -372,29 +392,8 @@ Rectangle {
             }
           }
 
-//          console.log("after card_array: ", currentInfo.player_info_array[player_index].current_card)
 
-
-          var booom_flag = put_card_length === 4
-                           ? true
-                           : false
-          for (i = 0; i < put_card_length; i++) {
-
-            if (i !== 0 && messageFromPlayer.card_array[i] !== messageFromPlayer.card_array[i - 1]) {
-              booom_flag = false  // not boom
-            }
-
-          }
-
-          // king boom
-          if (put_card_length === 2
-              && messageFromPlayer.card_array[0]
-                  + messageFromPlayer.card_array[1] === 52 + 53)
-          {
-            booom_flag = true
-          }
-
-          if (booom_flag) {
+          if (isBoomOrKingBoom(messageFromPlayer.card_array)) {
             currentInfo.times *= 2
           }
 
@@ -410,6 +409,8 @@ Rectangle {
             timer.stop()
 
             currentInfo.state = finish
+
+
             var landlord_win = currentInfo.player_info_array[player_index].is_landlord
             for (i = 0; i < 3; i++) {
 
@@ -450,6 +451,11 @@ Rectangle {
 
 
         } else if (messageFromPlayer.type === wantPass) {
+
+          // not his turn
+          if (currentInfo.target_index !== player_index) {
+            return
+          }
 
           timer.stop()
 
@@ -768,6 +774,30 @@ Rectangle {
 
       function isFull() {
         return playerCount === 3
+      }
+
+      function isBoomOrKingBoom(card_array) {
+        var len = card_array.length
+        var booom_flag = len === 4
+                         ? true
+                         : false
+
+        for (var i = 0; i < len; i++) {
+
+          if (i !== 0 && card_array[i] !== card_array[i - 1]) {
+            booom_flag = false  // not boom
+          }
+
+        }
+
+        // king boom
+        if (len === 2
+            && card_array[0] + card_array[1] === 52 + 53)
+        {
+          booom_flag = true
+        }
+
+        return booom_flag
       }
 
       Column {
