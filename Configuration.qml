@@ -11,17 +11,37 @@ Item {
 
   property bool isValid: false
 
+  signal openConfigurationFileFail()
+
+  function writeJsonFile(json_obj) {
+    if (l.writeJsonFile(json_obj)) {
+      l.readJsonFile()
+      return true
+    }
+
+    return false
+  }
+
+  function updateConfiguration() {
+    return writeJsonFile(obj)
+  }
+
   LocalFileOperator {
     id: l
-    source: "./configuration.json"
+    source: getCurrentPath() + "./configuration.json"
 
     Component.onCompleted: {
+
+//      console.log(getCurrentPath())
+
       obj = l.readJsonFile()
       if (Object.keys(obj).length > 0) {
         isValid = true
       } else {
         isValid = false
+        openConfigurationFileFail()
       }
+
 //      console.log(isValid)
     }
   }

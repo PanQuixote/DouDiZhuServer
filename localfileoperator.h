@@ -35,14 +35,18 @@ public slots:
 
   QJsonObject readJsonFile(QString file_name = "");
 
-  bool writeJsonFile(QString file_name, QJsonObject content_obj = QJsonObject());
+  bool writeJsonFile(QJsonObject content_obj, QString file_name = "");
 
-  bool writeFile(QString file_name, QString content_string = "");
+  bool writeFile(QString content_string, QString file_name = "");
 
   QJsonObject stringToJson(const QString& str);
 
   QString jsonToString(const QJsonObject& json,
                        enum QJsonDocument::JsonFormat format = QJsonDocument::Indented);  //Indented or Compact
+
+  QString getCurrentPath();
+
+  bool isJsonString(const QString &str);
 
 private:
   QString m_source;

@@ -12,54 +12,81 @@ Window {
   Server {
     id: server_main
 
-    property var name_list: ["wolf", "son", "grandson"]
-    property var password_list: ["1234", "123", "123"]
-    property var score_list: [0, 0, 0]
 
+    // if password is right, return score, else return false
     function checkPassword(name, password) {
 
-
-      var index = name_list.indexOf(name)
-      if (index < 0) {
-        return false
+      var user_info_array = config.obj.user_info
+      for (var i = 0; i < user_info_array.length; i++) {
+        if (name === user_info_array[i].name) {
+          return password === user_info_array[i].password
+        }
       }
 
-      if (password_list[index] !== password) {
-        return false
-      }
-
-      return true
-    }
-
-    function checkName(name, password) {
       return false
     }
 
-    function getScore(name) {
-      var index = name_list.indexOf(name)
-      if (index < 0) {
-        return -9999
+    // if name already exist, return false
+    function checkName(name, password) {
+
+      var user_info_array = config.obj.user_info
+      for (var i = 0; i < user_info_array.length; i++) {
+        if (name === user_info_array[i].name) {
+          return false
+        }
       }
 
-      return score_list[index]
+      config.obj.user_info.push({"name": name,
+                                  "password": password,
+                                  "score": 0})
+
+      return config.updateConfiguration()
+    }
+
+    function getUserScore(name) {
+      var user_info_array = config.obj.user_info
+      for (var i = 0; i < user_info_array.length; i++) {
+        if (name === user_info_array[i].name) {
+          return user_info_array[i].score
+        }
+      }
+
+      return false
+    }
+
+    function updateUserScore(name, score) {
+
+      var user_info_array = config.obj.user_info
+      for (var i = 0; i < user_info_array.length; i++) {
+        if (name === user_info_array[i].name) {
+          config.obj.user_info[i].score = score
+          return config.updateConfiguration()
+        }
+      }
+
+      return false
+
     }
 
     onGetJsonMessage: {
 
-      var j
+      var i, j
 
       if (json_obj.type === wantLogin) {
 
         let name = json_obj.content.name
         let password = json_obj.content.password
+
         let success = checkPassword(name, password)
-        let score = 0
+        let score = getUserScore(name)
+
 
         j = {
           "type": returnPlayerInfo,
           "content": {
             "success": success,
             "name": name,
+            "password": password,
             "score": score,
             "socket": sender_socket
           }
@@ -71,6 +98,7 @@ Window {
 
         let name = json_obj.content.name
         let password = json_obj.content.password
+
         let success = checkName(name, password)
         let score = 0
 
@@ -79,6 +107,7 @@ Window {
           "content": {
             "success": success,
             "name": name,
+            "password": password,
             "score": score,
             "socket": sender_socket
           }
@@ -127,6 +156,20 @@ Window {
           function_rec.addNewLog("client enter room " + json_obj.content.room_id +
                                  ", index = " + player_index +
                                  ", socket = " + json_obj.content.socket)
+
+
+
+          // update AvailableRoomInfo
+          let room_info_array = room_list.getAvailableRoomInfo()
+
+          j = {
+            "type": returnAvailableRoomInfo,
+            "content": room_info_array
+          }
+
+          for (i = 0; i < server_main.clientCount(); i++) {
+            sendJsonMessage(j, server_main.getSocket(i))
+          }
         }
 
       } else if (json_obj.type === wantExitRoom) {
@@ -192,6 +235,10 @@ Window {
     height: parent.height
 
     anchors.left: parent.left
+
+    onWantToUpdateUserScore: {
+      server_main.updateUserScore(name, score)
+    }
   }
 
   // function rec
@@ -340,6 +387,14 @@ Window {
           }
         }
       }
+    }
+  }
+
+  Configuration {
+    id: config
+
+    onOpenConfigurationFileFail: {
+      function_rec.addNewLog("open configuration file fail!")
     }
   }
 }

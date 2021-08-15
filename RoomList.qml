@@ -13,6 +13,8 @@ Rectangle {
 
   property int max_room_count: 3
 
+  signal wantToUpdateUserScore(var name, var score)
+
   Component.onCompleted: {
 
     for (var i = 0; i < max_room_count; i++) {
@@ -35,7 +37,7 @@ Rectangle {
   function getAvailableRoomIndex() {
     var res = []
     for (var i = 0; i < room_list_view.count; i++) {
-      if (room_list_view.getItem(i).onlinePlayerCount < 3) {
+      if (room_list_view.getItem(i).playerCount < 3) {
         res.push(i)
       }
     }
@@ -47,10 +49,10 @@ Rectangle {
     var res = []
     for (var i = 0; i < room_list_view.count; i++) {
       var room_i = room_list_view.getItem(i)
-      if (room_i.onlinePlayerCount < 3) {
+      if (room_i.playerCount < 3) {
         var info = {
           "room_id": i,
-          "player_count": room_i.onlinePlayerCount,
+          "player_count": room_i.playerCount,
           "base_score": room_i.baseScore
         }
 
@@ -113,16 +115,16 @@ Rectangle {
       width: parent.width
       height: 150
 
-      color: onlinePlayerCount === 0
+      color: playerCount === 0
              ? "lightgrey"
-             : onlinePlayerCount === 1
+             : playerCount === 1
                ? "lightyellow"
-               : onlinePlayerCount === 2
+               : playerCount === 2
                  ? "orange"
                  : "orangered"
 
       property int room_id: index
-      property int onlinePlayerCount: 0
+      property int playerCount: 0
 
       property bool gaming: false
 
@@ -407,13 +409,29 @@ Rectangle {
 
             timer.stop()
 
-            var landlord_win = currentInfo.player_info_array[player_index].is_landlord
-
             currentInfo.state = finish
-            for ( i = 0; i < 3; i++) {
-              var player_i_is_landlord = currentInfo.player_info_array[i].is_landlord
-              currentInfo.player_info_array[i].win = (player_i_is_landlord === landlord_win)
+            var landlord_win = currentInfo.player_info_array[player_index].is_landlord
+            for (i = 0; i < 3; i++) {
+
+              let is_landlord = currentInfo.player_info_array[i].is_landlord
+              let win = (is_landlord === landlord_win)
+
+              currentInfo.player_info_array[i].win = win
+
+              let get_score = currentInfo.base_score * currentInfo.times
+
+              get_score = is_landlord ? get_score * 2 : get_score
+              get_score = win ? get_score : -get_score
+
+              currentInfo.player_info_array[i].score += get_score
+
+              let player_name = currentInfo.player_info_array[i].name
+              let current_score = currentInfo.player_info_array[i].score
+
+              wantToUpdateUserScore(player_name, current_score)
+
             }
+
             sendToAllPlayer()
 
           } else {  // wait next player put
@@ -451,9 +469,9 @@ Rectangle {
         }
       }
 
-      onOnlinePlayerCountChanged: {
+      onPlayerCountChanged: {
         init()
-        currentInfo.player_count = onlinePlayerCount
+        currentInfo.player_count = playerCount
       }
 
       onGamingChanged: {
@@ -477,7 +495,7 @@ Rectangle {
       // if success return index of player, else return -1
       function playerEnterRoom(player_socket, player_name, player_score) {
 
-        if (onlinePlayerCount < 3) {
+        if (playerCount < 3) {
 
           for (var i = 0; i < 3; i++) {
 
@@ -485,7 +503,7 @@ Rectangle {
 
               playerOnline[i] = true
               playerSocket[i] = player_socket
-              onlinePlayerCount += 1
+              playerCount += 1
 
 
               currentInfo.state = someoneEnterRoom
@@ -523,7 +541,7 @@ Rectangle {
         if (i >= 0) {
 
 
-          onlinePlayerCount -= 1
+          playerCount -= 1
           playerOnline[i] = false
           playerSocket[i] = -1
 
@@ -537,9 +555,23 @@ Rectangle {
             currentInfo.state = finish
             for (var j = 0; j < 3; j++) {
 
-              currentInfo.player_info_array[j].win = (j !== i)
+              let win = (j !== i)
+              let is_landlord = currentInfo.player_info_array[j].is_landlord
+              currentInfo.player_info_array[j].win = win
+
+              let get_score = currentInfo.base_score * currentInfo.times
+
+              get_score = is_landlord ? get_score * 2 : get_score
+              get_score = win ? get_score : -get_score
+
+              currentInfo.player_info_array[j].score += get_score
+
+              let player_name = currentInfo.player_info_array[j].name
+              let current_score = currentInfo.player_info_array[j].score
+              wantToUpdateUserScore(player_name, current_score)
 
             }
+
             sendToAllPlayer()
 
           } else {
@@ -734,6 +766,10 @@ Rectangle {
         return card_index
       }
 
+      function isFull() {
+        return playerCount === 3
+      }
+
       Column {
         anchors.fill: parent
 
@@ -756,7 +792,7 @@ Rectangle {
           width: parent.width
           height: 30
 
-          text: qsTr("player count:") + single_room.onlinePlayerCount
+          text: qsTr("player count:") + single_room.playerCount
           font.bold: true
           font.pointSize: 14
 

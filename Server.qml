@@ -67,6 +67,11 @@ SocketServer {
   function sendJsonMessage(json_obj, receiver_socket) {
     var str = JSON.stringify(json_obj)
 
-    return sendMessage(str, receiver_socket)
+    var res = sendMessage(str, receiver_socket)
+    if (res !== true) {
+      console.log("fail to send message to client ", receiver_socket)
+    }
+
+    return res
   }
 }

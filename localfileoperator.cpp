@@ -1,5 +1,7 @@
 #include "localfileoperator.h"
 
+#include <QCoreApplication>
+
 LocalFileOperator::LocalFileOperator(QObject *parent) : QObject(parent)
 {
   m_source = "";
@@ -47,6 +49,7 @@ QJsonObject LocalFileOperator::readJsonFile(QString file_name)
   }
 
   QJsonObject rootObj = jsonDoc.object();
+
   if(file.isOpen()) {
     file.close();
   }
@@ -54,12 +57,12 @@ QJsonObject LocalFileOperator::readJsonFile(QString file_name)
   return rootObj;
 }
 
-bool LocalFileOperator::writeJsonFile(QString file_name, QJsonObject content_obj)
+bool LocalFileOperator::writeJsonFile(QJsonObject content_obj, QString file_name)
 {
-  return writeFile(file_name, jsonToString(content_obj));
+  return writeFile(jsonToString(content_obj), file_name);
 }
 
-bool LocalFileOperator::writeFile(QString file_name, QString content_string)
+bool LocalFileOperator::writeFile(QString content_string, QString file_name)
 {
   if (file_name == "") {
     file_name = m_source;
@@ -98,6 +101,27 @@ QJsonObject LocalFileOperator::stringToJson(const QString &str)
 QString LocalFileOperator::jsonToString(const QJsonObject &json, enum QJsonDocument::JsonFormat format)
 {
   return QString(QJsonDocument(json).toJson(format));
+}
+
+QString LocalFileOperator::getCurrentPath()
+{
+  return QCoreApplication::applicationDirPath();
+}
+
+bool LocalFileOperator::isJsonString(const QString &str)
+{
+  QJsonObject obj;
+
+  QJsonParseError err;
+  QJsonDocument doc = QJsonDocument::fromJson(str.toUtf8(), &err);
+  if (err.error == QJsonParseError::NoError)
+  {
+    if (doc.isObject())
+    {
+      return true;
+    }
+  }
+  return false;
 }
 
 
