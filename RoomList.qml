@@ -334,12 +334,15 @@ Rectangle {
 
           // check if all card in put_card are also in current_card or not
           for (i = 0; i < put_card_length; i++) {
-            let put_card_index_in_current_card = current_card.indexOf(put_card[i])
-            if (put_card_index_in_current_card >= 0) {
-              currentInfo.player_info_array[player_index].current_card.splice(put_card_index_in_current_card, 1)
-            } else {  // put_card[i] not in current_card
+            if (current_card.indexOf(put_card[i]) < 0) { // put_card[i] not in current_card
               return
             }
+          }
+
+          // delete put_card from current_card
+          for (i = 0; i < put_card_length; i++) {
+            let put_card_index_in_current_card = current_card.indexOf(put_card[i])
+            currentInfo.player_info_array[player_index].current_card.splice(put_card_index_in_current_card, 1)
           }
 
 

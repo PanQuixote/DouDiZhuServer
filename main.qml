@@ -253,7 +253,7 @@ Window {
     anchors.left: parent.left
 
     onWantToUpdateUserScore: {
-      server_main.updateUserScore(name, score)
+      main_window.updateUserScore(name, score)
     }
   }
 
