@@ -6,31 +6,6 @@ SocketServer {
 
   signal getJsonMessage(var json_obj, var sender_socket)
 
-
-  // request get from client
-  readonly property int wantLogin: 0
-  readonly property int wantGetAvailableRoomInfo: 1
-  readonly property int wantGetCurrentRoomInfo: 2
-  readonly property int wantEnterRoom: 3
-  readonly property int wantExitRoom: 4
-  readonly property int wantDoSomethingInRoom: 5
-  readonly property int wantRegister: 6
-
-
-  // return to client
-  readonly property int returnGameInfo: 9
-  readonly property int returnPlayerInfo: 10
-  readonly property int returnAvailableRoomInfo: 11
-  readonly property int returnRoomInfo: 12
-  readonly property int returnPlayerIndex: 13
-
-
-
-//  property var templet_of_json_from_client: {
-//    "type": wantLogin,
-//    "content": {}
-//  }
-
   function isJsonStr(str) {
     if (typeof str == 'string') {
         try {

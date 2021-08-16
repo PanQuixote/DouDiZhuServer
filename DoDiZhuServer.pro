@@ -19,6 +19,7 @@ SOURCES += \
         socketserver.cpp
 
 RESOURCES += qml.qrc \
+    classes/classes.qrc \
     custom_widget/custom_widget.qrc
 
 # Additional import path used to resolve QML modules in Qt Creator's code model

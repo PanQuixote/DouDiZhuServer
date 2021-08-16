@@ -3,224 +3,240 @@ import QtQuick.Controls 2.12
 import QtQuick.Window 2.12
 
 Window {
+  id: main_window
   visible: true
   width: 960
   height: 540
   title: qsTr("Hello World")
 
-  // server
-  Server {
-    id: server_main
+  function receiveMessageFromClient(msg, sender_socket) {
+
+    var i, return_json
+
+    if (msg.type === dpf.wantLogin) {
+
+      let name = msg.content.name
+      let password = msg.content.password
+
+      let success = checkPassword(name, password)
+      let score = getUserScore(name)
 
 
-    // if password is right, return score, else return false
-    function checkPassword(name, password) {
-
-      var user_info_array = config.obj.user_info
-      for (var i = 0; i < user_info_array.length; i++) {
-        if (name === user_info_array[i].name) {
-          return password === user_info_array[i].password
+      return_json = {
+        "type": dpf.returnPlayerInfo,
+        "content": {
+          "success": success,
+          "name": name,
+          "password": password,
+          "score": score,
+          "socket": sender_socket
         }
       }
 
-      return false
-    }
+      server_main.sendJsonMessage(return_json, sender_socket)
 
-    // if name already exist, return false
-    function checkName(name, password) {
+    } else if (msg.type === dpf.wantRegister) {
 
-      var user_info_array = config.obj.user_info
-      for (var i = 0; i < user_info_array.length; i++) {
-        if (name === user_info_array[i].name) {
-          return false
+      let name = msg.content.name
+      let password = msg.content.password
+
+      let success = checkName(name, password)
+      let score = 0
+
+      return_json = {
+        "type": dpf.returnPlayerInfo,
+        "content": {
+          "success": success,
+          "name": name,
+          "password": password,
+          "score": score,
+          "socket": sender_socket
         }
       }
 
-      config.obj.user_info.push({"name": name,
-                                  "password": password,
-                                  "score": 0})
+      server_main.sendJsonMessage(return_json, sender_socket)
 
-      return config.updateConfiguration()
-    }
+    } else if (msg.type === dpf.wantGetAvailableRoomInfo) {
 
-    function getUserScore(name) {
-      var user_info_array = config.obj.user_info
-      for (var i = 0; i < user_info_array.length; i++) {
-        if (name === user_info_array[i].name) {
-          return user_info_array[i].score
-        }
+      let room_info_array = room_list.getAvailableRoomInfo()
+
+      return_json = {
+        "type": dpf.returnAvailableRoomInfo,
+        "content": room_info_array
       }
 
-      return false
-    }
+      server_main.sendJsonMessage(return_json, sender_socket)
 
-    function updateUserScore(name, score) {
+    } else if (msg.type === dpf.wantGetCurrentRoomInfo) {
 
-      var user_info_array = config.obj.user_info
-      for (var i = 0; i < user_info_array.length; i++) {
-        if (name === user_info_array[i].name) {
-          config.obj.user_info[i].score = score
-          return config.updateConfiguration()
-        }
-      }
+      return_json = room_list.getRoomInfo(msg.content.room_id)
+      return_json.type = dpf.returnGameInfo
+      server_main.sendJsonMessage(return_json, sender_socket)
 
-      return false
+    } else if (msg.type === dpf.wantEnterRoom) {
 
-    }
+      var player_index = room_list.enterRoom(msg.content.room_id,
+                                             msg.content.socket,
+                                             msg.content.name,
+                                             msg.content.score)
 
-    onGetJsonMessage: {
+      // enter room success
+      if (player_index >= 0)
+      {
+        return_json = {
+          "type": dpf.returnPlayerIndex,
 
-      var i, j
-
-      if (json_obj.type === wantLogin) {
-
-        let name = json_obj.content.name
-        let password = json_obj.content.password
-
-        let success = checkPassword(name, password)
-        let score = getUserScore(name)
-
-
-        j = {
-          "type": returnPlayerInfo,
           "content": {
-            "success": success,
-            "name": name,
-            "password": password,
-            "score": score,
-            "socket": sender_socket
+            "room_id": msg.content.room_id,
+            "player_index": player_index
           }
         }
 
-        sendJsonMessage(j, sender_socket)
+        server_main.sendJsonMessage(return_json, sender_socket)
 
-      } else if (json_obj.type === wantRegister) {
+        function_rec.addNewLog("client enter room " + msg.content.room_id +
+                               ", index = " + player_index +
+                               ", socket = " + msg.content.socket)
 
-        let name = json_obj.content.name
-        let password = json_obj.content.password
 
-        let success = checkName(name, password)
-        let score = 0
 
-        j = {
-          "type": returnPlayerInfo,
-          "content": {
-            "success": success,
-            "name": name,
-            "password": password,
-            "score": score,
-            "socket": sender_socket
-          }
-        }
-
-        sendJsonMessage(j, sender_socket)
-
-      } else if (json_obj.type === wantGetAvailableRoomInfo) {
-
+        // update AvailableRoomInfo
         let room_info_array = room_list.getAvailableRoomInfo()
 
-        j = {
-          "type": returnAvailableRoomInfo,
+        return_json = {
+          "type": dpf.returnAvailableRoomInfo,
           "content": room_info_array
         }
 
-        sendJsonMessage(j, sender_socket)
-
-      } else if (json_obj.type === wantGetCurrentRoomInfo) {
-
-        j = room_list.getRoomInfo(json_obj.content.room_id)
-        j["type"] = returnGameInfo
-        sendJsonMessage(j, sender_socket)
-        
-      } else if (json_obj.type === wantEnterRoom) {
-
-        var player_index = room_list.enterRoom(json_obj.content.room_id,
-                                               json_obj.content.socket,
-                                               json_obj.content.name,
-                                               json_obj.content.score)
-
-        // enter room success
-        if (player_index >= 0)
-        {
-          j = {
-            "type": returnPlayerIndex,
-
-            "content": {
-              "room_id": json_obj.content.room_id,
-              "player_index": player_index
-            }
-          }
-
-          sendJsonMessage(j, sender_socket)
-
-          function_rec.addNewLog("client enter room " + json_obj.content.room_id +
-                                 ", index = " + player_index +
-                                 ", socket = " + json_obj.content.socket)
-
-
-
-          // update AvailableRoomInfo
-          let room_info_array = room_list.getAvailableRoomInfo()
-
-          j = {
-            "type": returnAvailableRoomInfo,
-            "content": room_info_array
-          }
-
-          for (i = 0; i < server_main.clientCount(); i++) {
-            sendJsonMessage(j, server_main.getSocket(i))
-          }
+        for (i = 0; i < server_main.clientCount(); i++) {
+          server_main.sendJsonMessage(return_json, server_main.getSocket(i))
         }
-
-      } else if (json_obj.type === wantExitRoom) {
-
-        var room_index = room_list.exitRoom(json_obj.content.socket)
-
-        // exit room success
-        if (room_index >= 0)
-        {
-          let room_info_array = room_list.getAvailableRoomInfo()
-
-          j = {
-            "type": returnAvailableRoomInfo,
-            "content": room_info_array
-          }
-
-          for (let i = 0; i < server_main.clientCount(); i++) {
-            sendJsonMessage(j, server_main.getSocket(i))
-          }
-
-        }
-
-      } else if (json_obj.type === wantDoSomethingInRoom) {
-
-        room_list.doSomethingInRoom(json_obj.content.room_id, json_obj.content)
-
       }
-    }
 
-    onClientConnected: {
-      function_rec.addNewLog("new client connected: socket = " + client_socket)
-    }
+    } else if (msg.type === dpf.wantExitRoom) {
 
-    onClientDisconnected: {
-      var room_id = room_list.exitRoom(client_socket)
-      if (room_id > 0) {
-        function_rec.addNewLog("client exit room " + room_id + ", socket = " + client_socket)
+      var room_index = room_list.exitRoom(msg.content.socket)
 
+      // exit room success
+      if (room_index >= 0)
+      {
         let room_info_array = room_list.getAvailableRoomInfo()
 
-        var j = {
-          "type": returnAvailableRoomInfo,
+        return_json = {
+          "type": dpf.returnAvailableRoomInfo,
           "content": room_info_array
         }
 
         for (let i = 0; i < server_main.clientCount(); i++) {
-          sendJsonMessage(j, server_main.getSocket(i))
+          server_main.sendJsonMessage(return_json, server_main.getSocket(i))
         }
+
       }
-      function_rec.addNewLog("client disconnected: socket = " + client_socket)
+
+    } else if (msg.type === dpf.wantDoSomethingInRoom) {
+
+      room_list.doSomethingInRoom(msg.content.room_id, msg.content)
+
     }
+  }
+
+  function slotClientConnected(client_socket) {
+    function_rec.addNewLog("new client connected: socket = " + client_socket)
+  }
+
+  function slotClientDisconnected(client_socket) {
+
+    var room_id = room_list.exitRoom(client_socket)
+    if (room_id > 0) {
+      function_rec.addNewLog("client exit room " + room_id + ", socket = " + client_socket)
+
+      let room_info_array = room_list.getAvailableRoomInfo()
+
+      var j = {
+        "type": dpf.returnAvailableRoomInfo,
+        "content": room_info_array
+      }
+
+      for (let i = 0; i < server_main.clientCount(); i++) {
+        sendJsonMessage(j, server_main.getSocket(i))
+      }
+    }
+
+    function_rec.addNewLog("client disconnected: socket = " + client_socket)
+  }
+
+  // if password is right, return score, else return false
+  function checkPassword(name, password) {
+
+    var user_info_array = config.obj.user_info
+    for (var i = 0; i < user_info_array.length; i++) {
+      if (name === user_info_array[i].name) {
+        return password === user_info_array[i].password
+      }
+    }
+
+    return false
+  }
+
+  // if name already exist, return false
+  function checkName(name, password) {
+
+    var user_info_array = config.obj.user_info
+    for (var i = 0; i < user_info_array.length; i++) {
+      if (name === user_info_array[i].name) {
+        return false
+      }
+    }
+
+    config.obj.user_info.push({"name": name,
+                                "password": password,
+                                "score": 0})
+
+    return config.updateConfiguration()
+  }
+
+  function getUserScore(name) {
+    var user_info_array = config.obj.user_info
+    for (var i = 0; i < user_info_array.length; i++) {
+      if (name === user_info_array[i].name) {
+        return user_info_array[i].score
+      }
+    }
+
+    return false
+  }
+
+  function updateUserScore(name, score) {
+
+    var user_info_array = config.obj.user_info
+    for (var i = 0; i < user_info_array.length; i++) {
+      if (name === user_info_array[i].name) {
+        config.obj.user_info[i].score = score
+        return config.updateConfiguration()
+      }
+    }
+
+    return false
+
+  }
+
+  // server
+  Server {
+    id: server_main
+
+    onGetJsonMessage: {
+      main_window.receiveMessageFromClient(json_obj, sender_socket)
+    }
+
+    onClientConnected: {
+      main_window.slotClientConnected(client_socket)
+    }
+
+    onClientDisconnected: {
+      main_window.slotClientDisconnected(client_socket)
+      var room_id = room_list.exitRoom(client_socket)
+    }
+
   }
 
   // room list
@@ -396,5 +412,9 @@ Window {
     onOpenConfigurationFileFail: {
       function_rec.addNewLog("open configuration file fail!")
     }
+  }
+
+  DataPackageFormat {
+    id: dpf
   }
 }

@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/">
+        <file>Configuration.qml</file>
+        <file>Server.qml</file>
+        <file>DataPackageFormat.qml</file>
+    </qresource>
+</RCC>

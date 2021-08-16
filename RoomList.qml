@@ -25,11 +25,12 @@ Rectangle {
 
   function doSomethingInRoom(room_index, messageFromPlayer) {
 
-    if (room_index > room_list_view.count || room_index < 0) {
+    if (room_index >= room_list_view.count
+        || room_index < 0) {
       return false
     }
 
-    room_list_view.getItem(room_index).messageFromPlayer = messageFromPlayer
+    room_list_view.getItem(room_index).receiveMessageFromClient(messageFromPlayer)
 
     return true
   }
@@ -138,61 +139,46 @@ Rectangle {
       property bool initFlag: false
 
       property var currentInfo  // will be sent to client
-
-
-      // state of currentInfo
-      readonly property int someoneEnterRoom: 0
-      readonly property int waitReady: 1
-      readonly property int waitCall: 2
-      readonly property int waitPut: 3
-      readonly property int finish: 4
-      readonly property int someoneReady: 5
-      readonly property int someoneCancelReady: 6
-      readonly property int someoneCall: 7
-      readonly property int someoneNotCall: 8
-      readonly property int someonePut: 9
-      readonly property int someonePass: 10
-      readonly property int someoneExitRoom: 11
-
-
-
-
       property var messageFromPlayer  // send from client
 
-      // type
-      readonly property int wantReady: 0
-      readonly property int wantCancelReady: 1
-      readonly property int wantCall: 2
-      readonly property int wantNotCall: 3
-      readonly property int wantPut: 4
-      readonly property int wantPass: 5
-
-
-      property var templete_of_json_from_player: {
-
-        "room_id": 0,
-        "player_index": 0,
-        "socket": 0,
-
-        "type": wantReady,
-
-        "card_array": []
-
-      }
 
       Component.onCompleted: {
-        init()
+        initCurrentInfo()
       }
 
-      onMessageFromPlayerChanged: {
+      onPlayerCountChanged: {
+        initCurrentInfo()
+        currentInfo.player_count = playerCount
+      }
+
+      onGamingChanged: {
+        initCurrentInfo()
+        currentInfo.gaming = gaming
+      }
+
+      onPlayerOnlineChanged: {
+        initCurrentInfo()
+        currentInfo.player_online = playerOnline
+      }
+
+      onPlayerSocketChanged: {
+        initCurrentInfo()
+        for (var i = 0; i < 3; i++) {
+          currentInfo.player_info_array[i].socket = playerSocket[i]
+        }
+      }
+
+      function receiveMessageFromClient(msg) {
+
+        messageFromPlayer = msg
 
         var player_index = messageFromPlayer.player_index
 
         var i
 
-        if (messageFromPlayer.type === wantReady) {
+        if (messageFromPlayer.type === dpf.wantReady) {
 
-          currentInfo.state = someoneReady
+          currentInfo.state = dpf.someoneReady
           currentInfo.target_index = player_index
 
           currentInfo.player_ready[player_index] = true
@@ -203,13 +189,9 @@ Rectangle {
 
 
 
-          let all_ready = true
-          for (i = 0; i < 3; i++) {
-            if (currentInfo.player_ready[i] !== true) {
-              all_ready = false
-              break
-            }
-          }
+          let all_ready = currentInfo.player_ready[0]
+                          && currentInfo.player_ready[1]
+                          && currentInfo.player_ready[2]
 
           if (all_ready) {  // everyone ready
 
@@ -217,7 +199,7 @@ Rectangle {
 
             gaming = true
 
-            currentInfo.state = waitCall
+            currentInfo.state = dpf.waitCall
             currentInfo.remain_time = maxThinkTime
             currentInfo.target_index = getRandomInt(0, 2)
 
@@ -238,28 +220,29 @@ Rectangle {
 
           } else {
 
-            currentInfo.state = waitReady
+            currentInfo.state = dpf.waitReady
 
             sendToAllPlayer()
           }
 
 
 
-        } else if (messageFromPlayer.type === wantCancelReady) {
+        } else if (messageFromPlayer.type === dpf.wantCancelReady) {
 
           currentInfo.player_ready[player_index] = false
           currentInfo.player_info_array[player_index].ready = false
 
-          currentInfo.state = someoneCancelReady
+          currentInfo.state = dpf.someoneCancelReady
           currentInfo.target_index = player_index
 
           sendToAllPlayer()
 
-          currentInfo.state = waitReady
+
+          currentInfo.state = dpf.waitReady
 
           sendToAllPlayer()
 
-        } else if (messageFromPlayer.type === wantCall) {
+        } else if (messageFromPlayer.type === dpf.wantCall) {
 
           // not his turn
           if (currentInfo.target_index !== player_index) {
@@ -268,7 +251,7 @@ Rectangle {
 
           timer.stop()
 
-          currentInfo.state = someoneCall
+          currentInfo.state = dpf.someoneCall
           currentInfo.target_index = player_index
 
           currentInfo.player_info_array[player_index].is_landlord = true
@@ -280,7 +263,7 @@ Rectangle {
           sendToAllPlayer()
 
 
-          currentInfo.state = waitPut
+          currentInfo.state = dpf.waitPut
           currentInfo.remain_time = maxThinkTime
           currentInfo.target_index = player_index
           currentInfo.last_index = player_index
@@ -290,7 +273,7 @@ Rectangle {
           // start count down
           timer.restart(maxThinkTime)
 
-        } else if (messageFromPlayer.type === wantNotCall) {
+        } else if (messageFromPlayer.type === dpf.wantNotCall) {
 
           // not his turn
           if (currentInfo.target_index !== player_index) {
@@ -299,7 +282,7 @@ Rectangle {
 
           timer.stop()
 
-          currentInfo.state = someoneNotCall
+          currentInfo.state = dpf.someoneNotCall
           currentInfo.target_index = player_index
           sendToAllPlayer()
 
@@ -316,7 +299,7 @@ Rectangle {
 
           if (all_asked_call) { // none one call, finish
 
-            currentInfo.state = finish
+            currentInfo.state = dpf.finish
             for (i = 0; i < 3; i++) {
               currentInfo.player_info_array[i].win = false
             }
@@ -325,7 +308,7 @@ Rectangle {
 
           } else {  // someone have not be ask, ask him
 
-            currentInfo.state = waitCall
+            currentInfo.state = dpf.waitCall
             currentInfo.remain_time = maxThinkTime
             currentInfo.target_index = nextPlayerIndex(player_index)
             sendToAllPlayer()
@@ -336,7 +319,7 @@ Rectangle {
           }
 
 
-        } else if (messageFromPlayer.type === wantPut) {
+        } else if (messageFromPlayer.type === dpf.wantPut) {
 
           // not his turn
           if (currentInfo.target_index !== player_index) {
@@ -362,7 +345,7 @@ Rectangle {
 
           timer.stop()
 
-          currentInfo.state = someonePut
+          currentInfo.state = dpf.someonePut
           currentInfo.target_index = player_index
           currentInfo.last_index = player_index
           currentInfo.card_array = messageFromPlayer.card_array
@@ -408,7 +391,7 @@ Rectangle {
 
             timer.stop()
 
-            currentInfo.state = finish
+            currentInfo.state = dpf.finish
 
 
             var landlord_win = currentInfo.player_info_array[player_index].is_landlord
@@ -437,7 +420,7 @@ Rectangle {
 
           } else {  // wait next player put
 
-            currentInfo.state = waitPut
+            currentInfo.state = dpf.waitPut
             currentInfo.remain_time = maxThinkTime
             currentInfo.target_index = nextPlayerIndex(player_index)
             sendToAllPlayer()
@@ -450,7 +433,7 @@ Rectangle {
 
 
 
-        } else if (messageFromPlayer.type === wantPass) {
+        } else if (messageFromPlayer.type === dpf.wantPass) {
 
           // not his turn
           if (currentInfo.target_index !== player_index) {
@@ -459,12 +442,12 @@ Rectangle {
 
           timer.stop()
 
-          currentInfo.state = someonePass
+          currentInfo.state = dpf.someonePass
           currentInfo.target_index = player_index
           sendToAllPlayer()
 
 
-          currentInfo.state = waitPut
+          currentInfo.state = dpf.waitPut
           currentInfo.remain_time = 20
           currentInfo.target_index = nextPlayerIndex(player_index)
           sendToAllPlayer()
@@ -475,27 +458,6 @@ Rectangle {
         }
       }
 
-      onPlayerCountChanged: {
-        init()
-        currentInfo.player_count = playerCount
-      }
-
-      onGamingChanged: {
-        init()
-        currentInfo.gaming = gaming
-      }
-
-      onPlayerOnlineChanged: {
-        init()
-        currentInfo.player_online = playerOnline
-      }
-
-      onPlayerSocketChanged: {
-        init()
-        for (var i = 0; i < 3; i++) {
-          currentInfo.player_info_array[i].socket = playerSocket[i]
-        }
-      }
 
 
       // if success return index of player, else return -1
@@ -512,7 +474,7 @@ Rectangle {
               playerCount += 1
 
 
-              currentInfo.state = someoneEnterRoom
+              currentInfo.state = dpf.someoneEnterRoom
               currentInfo.player_ready[i] = false
               currentInfo.target_index = i
               currentInfo.player_info_array[i].name = player_name
@@ -525,7 +487,7 @@ Rectangle {
               }
 
 
-              currentInfo.state = waitReady
+              currentInfo.state = dpf.waitReady
               for (var y = 0; y < 3; y++) {
                 if (y !== i) {
                   sendToPlayer(y)
@@ -558,7 +520,7 @@ Rectangle {
 
             timer.stop()
 
-            currentInfo.state = finish
+            currentInfo.state = dpf.finish
             for (var j = 0; j < 3; j++) {
 
               let win = (j !== i)
@@ -582,7 +544,7 @@ Rectangle {
 
           } else {
 
-            currentInfo.state = someoneExitRoom
+            currentInfo.state = dpf.someoneExitRoom
             sendToAllPlayer()
 
           }
@@ -648,14 +610,14 @@ Rectangle {
         return arr
       }
 
-      function init() {
+      function initCurrentInfo() {
 
         if (initFlag) {
           return
         }
 
         currentInfo = {
-          "type": server.returnGameInfo,
+          "type": dpf.returnGameInfo,
           "room_id": index,
           "player_count": 0,
           "player_online": [false, false, false],
@@ -666,7 +628,7 @@ Rectangle {
                            4, 4, 4, 4, 4,
                            4, 4, 4, 1, 1],
           "extra_card": [],
-          "state": waitReady,
+          "state": dpf.waitReady,
           "remain_time": 20,
           "last_index": -1,
           "target_index": -1,
@@ -722,7 +684,7 @@ Rectangle {
 
       function restart() {
 
-        currentInfo.state = waitReady
+        currentInfo.state = dpf.waitReady
         currentInfo.player_ready = [false, false, false]
         currentInfo.asked_call = [false, false, false]
         currentInfo.card_counter = [4, 4, 4, 4, 4,
@@ -743,18 +705,6 @@ Rectangle {
           currentInfo.player_info_array[i].current_card = []
 
         }
-      }
-
-      function setInfo(names, values) {
-
-        if (names.length !== values.length) {
-          return
-        }
-
-        for (var i = 0; i < names.length; i++) {
-          currentInfo[names[i]] = values[i]
-        }
-
       }
 
       function sortByBigToSmall(card_index) {
@@ -862,7 +812,7 @@ Rectangle {
               "player_index": single_room.currentInfo.target_index,
               "socket": single_room.playerSocket[single_room.currentInfo.target_index],
 
-              "type": single_room.wantNotCall,
+              "type": dpf.wantNotCall,
 
               "card_array": []
             }
@@ -882,8 +832,8 @@ Rectangle {
               "socket": single_room.playerSocket[single_room.currentInfo.target_index],
 
               "type": single_room.currentInfo.target_index === single_room.currentInfo.last_index
-                      ? single_room.wantPut
-                      : single_room.wantPass,
+                      ? dpf.wantPut
+                      : dpf.wantPass,
 
               "card_array": [auto_put_card_index]
             }
@@ -895,6 +845,9 @@ Rectangle {
         }
       }
 
+      DataPackageFormat {
+        id: dpf
+      }
     }
   }
 }

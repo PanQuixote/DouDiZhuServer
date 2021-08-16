@@ -1,0 +1,21 @@
+{
+    "user_info": [
+        {
+            "name": "wolf",
+            "password": 1234,
+            "score": 0
+        },
+
+        {
+            "name": "son",
+            "password": 12345678,
+            "score": 0
+        },
+
+        {
+            "name": "grandson",
+            "password": 12345678,
+            "score": 0
+        }
+    ]
+}
