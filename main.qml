@@ -234,7 +234,6 @@ Window {
 
     onClientDisconnected: {
       main_window.slotClientDisconnected(client_socket)
-      var room_id = room_list.exitRoom(client_socket)
     }
 
   }

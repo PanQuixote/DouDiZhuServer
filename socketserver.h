@@ -16,7 +16,7 @@ using namespace std;
 #define IP_BUF_SIZE 129
 
 #define SERVER_PORT 8888
-#define MSG_BUF_SIZE 1024
+#define MSG_BUF_SIZE 20480
 
 #define MAX_CLIENT_COUNT 3
 

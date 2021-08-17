@@ -28,18 +28,26 @@ Item {
 
   LocalFileOperator {
     id: l
-    source: getCurrentPath() + "./configuration.json"
 
     Component.onCompleted: {
+//      console.log(source)
 
-//      console.log(getCurrentPath())
-
+      source = getCurrentPath() + "/../../DoDiZhuServer/configuration.json"
       obj = l.readJsonFile()
       if (Object.keys(obj).length > 0) {
         isValid = true
+        return
       } else {
         isValid = false
-        openConfigurationFileFail()
+      }
+
+      source = getCurrentPath() + "./configuration.json"
+      obj = l.readJsonFile()
+      if (Object.keys(obj).length > 0) {
+        isValid = true
+        return
+      } else {
+        isValid = false
       }
 
 //      console.log(isValid)

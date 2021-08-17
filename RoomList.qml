@@ -21,6 +21,10 @@ Rectangle {
       room_list_view.model.append({})
     }
 
+    room_list_view.getItem(0).setBaseScore(1)
+    room_list_view.getItem(1).setBaseScore(5)
+    room_list_view.getItem(2).setBaseScore(10)
+
   }
 
   function doSomethingInRoom(room_index, messageFromPlayer) {
@@ -156,6 +160,11 @@ Rectangle {
         currentInfo.gaming = gaming
       }
 
+      onBaseScoreChanged: {
+        initCurrentInfo()
+        currentInfo.base_score = baseScore
+      }
+
       onPlayerOnlineChanged: {
         initCurrentInfo()
         currentInfo.player_online = playerOnline
@@ -206,8 +215,8 @@ Rectangle {
             var card_array = generateRandomCardArray()
 
             for (i = 0; i < 3; i++) {
-              currentInfo.player_info_array[i].card_count = 17
               var current_card = card_array.slice(i * 17, (i + 1) * 17)
+              currentInfo.player_info_array[i].card_count = 17
               currentInfo.player_info_array[i].current_card = sortByBigToSmall(current_card)
             }
 
@@ -330,19 +339,22 @@ Rectangle {
           let put_card = messageFromPlayer.card_array
           let put_card_length = messageFromPlayer.card_array.length
           let current_card = currentInfo.player_info_array[player_index].current_card
+          var put_card_index_in_current_card = []
 
 
           // check if all card in put_card are also in current_card or not
           for (i = 0; i < put_card_length; i++) {
-            if (current_card.indexOf(put_card[i]) < 0) { // put_card[i] not in current_card
+            let res = cardIndexInCardArray(put_card[i], current_card)
+            if (res < 0) { // put_card[i] not in current_card
               return
+            } else {
+              put_card_index_in_current_card.push(res)
             }
           }
 
           // delete put_card from current_card
           for (i = 0; i < put_card_length; i++) {
-            let put_card_index_in_current_card = current_card.indexOf(put_card[i])
-            currentInfo.player_info_array[player_index].current_card.splice(put_card_index_in_current_card, 1)
+            currentInfo.player_info_array[player_index].current_card.splice(put_card_index_in_current_card[i], 1)
           }
 
 
@@ -353,8 +365,6 @@ Rectangle {
           currentInfo.last_index = player_index
           currentInfo.card_array = messageFromPlayer.card_array
 
-
-
           // update card_count
           currentInfo.player_info_array[player_index].card_count
               = currentInfo.player_info_array[player_index].current_card.length
@@ -362,24 +372,13 @@ Rectangle {
 
           // update card_counter
           for (i = 0; i < put_card_length; i++) {
-            var put_card_i = put_card[i]
-            if (put_card_i === 52) {
 
-              currentInfo.card_counter[13] -= 1
+            currentInfo.card_counter[put_card[i].grade - 3] -= 1
 
-            } else if (put_card_i === 53) {
-
-              currentInfo.card_counter[14] -= 1
-
-            } else {
-
-              currentInfo.card_counter[Math.floor(put_card_i / 4)] -= 1
-
-            }
           }
 
-
-          if (isBoomOrKingBoom(messageFromPlayer.card_array)) {
+          // check if times should double
+          if (isBoomOrKingBoom(put_card)) {
             currentInfo.times *= 2
           }
 
@@ -589,7 +588,7 @@ Rectangle {
         return player_index + 1 > 2 ? 0 : player_index + 1
       }
 
-      function getRandomInt(min, max) {
+      function getRandomInt(min, max) { // get a random int in [min, max]
         min = Math.ceil(min);
         max = Math.floor(max);
         return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -600,8 +599,24 @@ Rectangle {
         var i, j, temp
 
         var arr = []
-        for (i = 0; i < 54; i++) {
-          arr[i] = i
+        for(i = 3; i <= 17; i++) {
+
+          if (i === 16) { // joker
+
+            arr.push({"grade": 16, "face": 1, "index": 52})
+
+          } else if (i === 17) {  // big joker
+
+            arr.push({"grade": 17, "face": -2, "index": 53})
+
+          } else {
+
+            for (j = 1; j <= 4; j++) {
+              arr.push({"grade": i, "face": j, "index": (i - 3) * 4 + j - 1})
+            }
+
+          }
+
         }
 
         for (i = 53; i > 0; i--) {
@@ -610,6 +625,7 @@ Rectangle {
           arr[i] = arr[j]
           arr[j] = temp
         }
+
         return arr
       }
 
@@ -685,6 +701,10 @@ Rectangle {
         initFlag = true
       }
 
+      function setBaseScore(base_score) {
+        baseScore = base_score
+      }
+
       function restart() {
 
         currentInfo.state = dpf.waitReady
@@ -711,18 +731,13 @@ Rectangle {
       }
 
       function sortByBigToSmall(card_index) {
-        for (var i = 0; i < card_index.length; i++) {
-          for (var j = i + 1; j < card_index.length; j++) {
-            if (card_index[i] < card_index[j]) {
-              var t = card_index[i]
-              card_index[i] = card_index[j]
-              card_index[j] = t
-            }
-          }
+        var c = card_index
 
-        }
+        c.sort(function (c1, c2) {
+          return c2.index - c1.index
+        })
 
-        return card_index
+        return c
       }
 
       function isFull() {
@@ -737,7 +752,7 @@ Rectangle {
 
         for (var i = 0; i < len; i++) {
 
-          if (i !== 0 && card_array[i] !== card_array[i - 1]) {
+          if (i !== 0 && card_array[i].grade !== card_array[i - 1].grade) {
             booom_flag = false  // not boom
           }
 
@@ -745,12 +760,29 @@ Rectangle {
 
         // king boom
         if (len === 2
-            && card_array[0] + card_array[1] === 52 + 53)
+            && card_array[0].index + card_array[1].index === 52 + 53)
         {
           booom_flag = true
         }
 
         return booom_flag
+      }
+
+      function cardIndexInCardArray(card, card_array) {
+
+        let grade = card.grade
+        let face = card.face
+        let index = card.index
+        for (var i = 0; i < card_array.length; i++) {
+          if (grade === card_array[i].grade
+              && face === card_array[i].face
+              && index === card_array[i].index) {
+
+            return i
+          }
+        }
+
+        return -1
       }
 
       Column {
@@ -807,7 +839,7 @@ Rectangle {
 
           var auto_not_call_message
 
-          if (single_room.currentInfo.sate === waitCall) {
+          if (single_room.currentInfo.sate === dpf.waitCall) {
 
             auto_not_call_message = {
 
@@ -822,7 +854,7 @@ Rectangle {
 
             single_room.messageFromPlayer = auto_not_call_message
 
-          } else if (single_room.currentInfo.sate === waitPut) {
+          } else if (single_room.currentInfo.sate === dpf.waitPut) {
 
             // the index of card witch will be put
             var auto_put_card_index = single_room.currentInfo.player_info_array[single_room.currentInfo.target_index]
