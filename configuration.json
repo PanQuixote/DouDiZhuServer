@@ -3,7 +3,7 @@
         {
             "name": "wolf",
             "password": "1234",
-            "score": -1
+            "score": 2
         },
         {
             "name": "son",
@@ -13,7 +13,7 @@
         {
             "name": "grandson",
             "password": "12345678",
-            "score": 1
+            "score": 0
         }
     ]
 }

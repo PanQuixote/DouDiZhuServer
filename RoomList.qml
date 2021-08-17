@@ -145,10 +145,7 @@ Rectangle {
       property var currentInfo  // will be sent to client
       property var messageFromPlayer  // send from client
 
-
-      Component.onCompleted: {
-        initCurrentInfo()
-      }
+      signal timeout()
 
       onPlayerCountChanged: {
         initCurrentInfo()
@@ -175,6 +172,56 @@ Rectangle {
         for (var i = 0; i < 3; i++) {
           currentInfo.player_info_array[i].socket = playerSocket[i]
         }
+      }
+
+
+      onTimeout: {
+
+        var auto_message
+
+        if (single_room.currentInfo.state === dpf.waitCall) {
+
+          auto_message = {
+
+            "room_id": single_room.room_id,
+            "player_index": single_room.currentInfo.target_index,
+            "socket": single_room.playerSocket[single_room.currentInfo.target_index],
+
+            "type": dpf.wantNotCall,
+
+            "card_array": []
+          }
+
+          single_room.receiveMessageFromClient(auto_message)
+
+        } else if (single_room.currentInfo.state === dpf.waitPut) {
+
+          // will put the last card
+          let target_index = single_room.currentInfo.target_index
+          let current_card = single_room.currentInfo.player_info_array[target_index].current_card
+          let last_card = current_card[current_card.length - 1]
+
+          auto_message = {
+
+            "room_id": single_room.room_id,
+            "player_index": single_room.currentInfo.target_index,
+            "socket": single_room.playerSocket[single_room.currentInfo.target_index],
+
+            "type": single_room.currentInfo.target_index === single_room.currentInfo.last_index
+                    ? dpf.wantPut
+                    : dpf.wantPass,
+
+            "card_array": [last_card]
+          }
+
+          single_room.receiveMessageFromClient(auto_message)
+
+        }
+      }
+
+
+      Component.onCompleted: {
+        initCurrentInfo()
       }
 
       function receiveMessageFromClient(msg) {
@@ -266,7 +313,7 @@ Rectangle {
           currentInfo.player_info_array[player_index].is_landlord = true
 
           let t = currentInfo.player_info_array[player_index].current_card.concat(currentInfo.extra_card)
-          currentInfo.player_info_array[player_index].current_card = t
+          currentInfo.player_info_array[player_index].current_card = sortByBigToSmall(t)
           currentInfo.player_info_array[player_index].card_count = 20
 
           sendToAllPlayer()
@@ -353,7 +400,7 @@ Rectangle {
           }
 
           // delete put_card from current_card
-          for (i = 0; i < put_card_length; i++) {
+          for (i = put_card_length - 1; i >= 0; i--) {
             currentInfo.player_info_array[player_index].current_card.splice(put_card_index_in_current_card[i], 1)
           }
 
@@ -603,16 +650,16 @@ Rectangle {
 
           if (i === 16) { // joker
 
-            arr.push({"grade": 16, "face": 1, "index": 52})
+            arr.push({"grade": 16, "face": 1, "card_index": 52})
 
           } else if (i === 17) {  // big joker
 
-            arr.push({"grade": 17, "face": -2, "index": 53})
+            arr.push({"grade": 17, "face": -2, "card_index": 53})
 
           } else {
 
             for (j = 1; j <= 4; j++) {
-              arr.push({"grade": i, "face": j, "index": (i - 3) * 4 + j - 1})
+              arr.push({"grade": i, "face": j, "card_index": (i - 3) * 4 + j - 1})
             }
 
           }
@@ -730,11 +777,11 @@ Rectangle {
         }
       }
 
-      function sortByBigToSmall(card_index) {
-        var c = card_index
+      function sortByBigToSmall(card_array) {
+        var c = card_array
 
         c.sort(function (c1, c2) {
-          return c2.index - c1.index
+          return c2.card_index - c1.card_index
         })
 
         return c
@@ -760,7 +807,7 @@ Rectangle {
 
         // king boom
         if (len === 2
-            && card_array[0].index + card_array[1].index === 52 + 53)
+            && card_array[0].card_index + card_array[1].card_index === 52 + 53)
         {
           booom_flag = true
         }
@@ -770,14 +817,9 @@ Rectangle {
 
       function cardIndexInCardArray(card, card_array) {
 
-        let grade = card.grade
-        let face = card.face
-        let index = card.index
+        let card_index = card.card_index
         for (var i = 0; i < card_array.length; i++) {
-          if (grade === card_array[i].grade
-              && face === card_array[i].face
-              && index === card_array[i].index) {
-
+          if (card_index === card_array[i].card_index) {
             return i
           }
         }
@@ -836,47 +878,7 @@ Rectangle {
         visible: false
 
         onTimerout: {
-
-          var auto_not_call_message
-
-          if (single_room.currentInfo.sate === dpf.waitCall) {
-
-            auto_not_call_message = {
-
-              "room_id": single_room.room_id,
-              "player_index": single_room.currentInfo.target_index,
-              "socket": single_room.playerSocket[single_room.currentInfo.target_index],
-
-              "type": dpf.wantNotCall,
-
-              "card_array": []
-            }
-
-            single_room.messageFromPlayer = auto_not_call_message
-
-          } else if (single_room.currentInfo.sate === dpf.waitPut) {
-
-            // the index of card witch will be put
-            var auto_put_card_index = single_room.currentInfo.player_info_array[single_room.currentInfo.target_index]
-                                        .current_card[single_room.currentInfo.player_info_array[single_room.currentInfo.target_index].card_count - 1]
-
-            auto_not_call_message = {
-
-              "room_id": single_room.room_id,
-              "player_index": single_room.currentInfo.target_index,
-              "socket": single_room.playerSocket[single_room.currentInfo.target_index],
-
-              "type": single_room.currentInfo.target_index === single_room.currentInfo.last_index
-                      ? dpf.wantPut
-                      : dpf.wantPass,
-
-              "card_array": [auto_put_card_index]
-            }
-
-            single_room.messageFromPlayer = auto_not_call_message
-
-          }
-
+          single_room.timeout()
         }
       }
 
