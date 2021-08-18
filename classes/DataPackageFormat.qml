@@ -19,6 +19,7 @@ Item {
   readonly property int wantNotCall: 4
   readonly property int wantPut: 5
   readonly property int wantPass: 6
+  readonly property int wantTalk: 7
 
 
 //  // the templet of message client send to server:
@@ -46,12 +47,6 @@ Item {
 //  }
 
 
-
-
-
-
-
-
   // type of message from server
   readonly property int returnGameInfo: 9
   readonly property int returnPlayerInfo: 10
@@ -74,6 +69,7 @@ Item {
   readonly property int someonePut: 10
   readonly property int someonePass: 11
   readonly property int someoneExitRoom: 12
+  readonly property int someoneTalk: 13
 
 
 //    // the templet of message from server:

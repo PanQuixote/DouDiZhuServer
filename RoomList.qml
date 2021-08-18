@@ -27,14 +27,14 @@ Rectangle {
 
   }
 
-  function doSomethingInRoom(room_index, messageFromPlayer) {
+  function doSomethingInRoom(room_id, messageFromPlayer) {
 
-    if (room_index >= room_list_view.count
-        || room_index < 0) {
+    if (!(room_id >= 0
+        && room_id < room_list_view.count)) {
       return false
     }
 
-    room_list_view.getItem(room_index).receiveMessageFromClient(messageFromPlayer)
+    room_list_view.getItem(room_id).receiveMessageFromClient(messageFromPlayer)
 
     return true
   }
@@ -143,7 +143,6 @@ Rectangle {
       property bool initFlag: false
 
       property var currentInfo  // will be sent to client
-      property var messageFromPlayer  // send from client
 
       signal timeout()
 
@@ -226,13 +225,11 @@ Rectangle {
 
       function receiveMessageFromClient(msg) {
 
-        messageFromPlayer = msg
-
-        var player_index = messageFromPlayer.player_index
+        var player_index = msg.player_index
 
         var i
 
-        if (messageFromPlayer.type === dpf.wantReady) {
+        if (msg.type === dpf.wantReady) {
 
           currentInfo.state = dpf.someoneReady
           currentInfo.target_index = player_index
@@ -283,7 +280,7 @@ Rectangle {
 
 
 
-        } else if (messageFromPlayer.type === dpf.wantCancelReady) {
+        } else if (msg.type === dpf.wantCancelReady) {
 
           currentInfo.player_ready[player_index] = false
           currentInfo.player_info_array[player_index].ready = false
@@ -298,7 +295,7 @@ Rectangle {
 
           sendToAllPlayer()
 
-        } else if (messageFromPlayer.type === dpf.wantCall) {
+        } else if (msg.type === dpf.wantCall) {
 
           // not his turn
           if (currentInfo.target_index !== player_index) {
@@ -329,7 +326,7 @@ Rectangle {
           // start count down
           timer.restart(maxThinkTime)
 
-        } else if (messageFromPlayer.type === dpf.wantNotCall) {
+        } else if (msg.type === dpf.wantNotCall) {
 
           // not his turn
           if (currentInfo.target_index !== player_index) {
@@ -375,7 +372,7 @@ Rectangle {
           }
 
 
-        } else if (messageFromPlayer.type === dpf.wantPut) {
+        } else if (msg.type === dpf.wantPut) {
 
           // not his turn
           if (currentInfo.target_index !== player_index) {
@@ -383,8 +380,8 @@ Rectangle {
           }
 
 
-          let put_card = messageFromPlayer.card_array
-          let put_card_length = messageFromPlayer.card_array.length
+          let put_card = msg.card_array
+          let put_card_length = msg.card_array.length
           let current_card = currentInfo.player_info_array[player_index].current_card
           var put_card_index_in_current_card = []
 
@@ -410,7 +407,7 @@ Rectangle {
           currentInfo.state = dpf.someonePut
           currentInfo.target_index = player_index
           currentInfo.last_index = player_index
-          currentInfo.card_array = messageFromPlayer.card_array
+          currentInfo.card_array = msg.card_array
 
           // update card_count
           currentInfo.player_info_array[player_index].card_count
@@ -482,7 +479,7 @@ Rectangle {
 
 
 
-        } else if (messageFromPlayer.type === dpf.wantPass) {
+        } else if (msg.type === dpf.wantPass) {
 
           // not his turn
           if (currentInfo.target_index !== player_index) {
@@ -503,6 +500,16 @@ Rectangle {
 
           // start count down
           timer.restart(maxThinkTime)
+
+        } else if (msg.type === dpf.wantTalk) {
+
+          let talk_msg = {
+            "type": dpf.returnGameInfo,
+            "state": dpf.someoneTalk,
+            "text": msg.name + ": " + msg.text
+          }
+
+          sendToAllPlayer(talk_msg)
 
         }
       }
@@ -608,14 +615,14 @@ Rectangle {
 
       }
 
-      function sendToAllPlayer() {
+      function sendToAllPlayer(content = currentInfo) {
         var flag = true
         for (var i = 0; i < 3; i++) {
           if (playerOnline[i] !== true) {
             continue
           }
 
-          if (server.sendJsonMessage(currentInfo, playerSocket[i]) !== true) {
+          if (server.sendJsonMessage(content, playerSocket[i]) !== true) {
             flag = false
           }
         }
