@@ -272,7 +272,7 @@ Window {
     }
 
     function clearLog() {
-      log_text.text = ""
+      log_text.clear()
     }
 
     Rectangle {
@@ -388,13 +388,13 @@ Window {
             var instruct_str = instruct_text.getText(0, instruct_text.length)
 
             if (instruct_str === "clear") {
-              log_text.text = ""
-              instruct_text.text = ""
+              log_text.clear()
+              instruct_text.clear()
               return
             }
 
             if (server_main.executeInstruct(instruct_str)) {
-              instruct_text.text = ""
+              instruct_text.clear()
             } else {
               function_rec.addNewLog(
                     "fail to execute instruct '" + instruct_str + "'")
