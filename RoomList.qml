@@ -439,7 +439,6 @@ Rectangle {
 
             currentInfo.state = dpf.finish
 
-
             var landlord_win = currentInfo.player_info_array[player_index].is_landlord
             for (i = 0; i < 3; i++) {
 
@@ -463,6 +462,12 @@ Rectangle {
             }
 
             sendToAllPlayer()
+
+
+            restart()
+            sendToAllPlayer()
+
+
 
           } else {  // wait next player put
 
